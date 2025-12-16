@@ -1,0 +1,21 @@
+<%- include include/head.html%>
+<div class="js-vserson hidden"></div>
+<%
+if(video && video.url){
+%>
+
+<div class="openload" id="playerbox" style="position: relative">
+
+</div>
+<script>
+    $(function () {
+        $('.openload').append('    <iframe id="openloadvideo" class="openloadvideo" src="<%=video.url%>" frameborder=0 scrolling=no allowfullscreen=allowfullscreen sandbox="allow-same-origin allow-scripts"></iframe>\n')
+
+    })
+</script>
+<%
+}
+%>
+
+<%- include include/videoTpl.html%>
+<%- include include/foot.html%>

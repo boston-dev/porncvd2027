@@ -1,0 +1,58 @@
+<%- include include/head.html%>
+<%
+if( typeof slide != "undefined"){
+%>
+      <div id="slider" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+          <%
+          for(var keys=0;keys<slide.length;keys++){
+          %>
+          <li data-target="#slider" data-slide-to="<%=keys%>" class="<% if(keys == 0){ %> active <% }%>"></li>
+          <%
+          }
+          %>
+        </ol>
+        <div class="carousel-inner">
+          <%
+          for(var keys=0;keys<slide.length;keys++){
+          %>
+          <div class="item <% if(keys == 0){ %> active <% }%>">
+            <a href="<%=slide[keys].href%>">
+              <img src="<%=slide[keys].img%>" >
+              <span class="carousel-caption"><%=slide[keys].title%></span>
+              <span class="carousel-bg"></span>
+            </a>
+          </div>
+          <%
+          }
+          %>
+        </div>
+        <a class="left carousel-control" href="#slider" role="button" data-slide="prev">
+          <span class=" glyphicon-chevron-left" aria-hidden="true"><</span></a>
+        <a class="right carousel-control" href="#slider" role="button" data-slide="next">
+          <span class=" glyphicon-chevron-right" aria-hidden="true">></span></a>
+      </div>
+<%
+}
+%>
+      <%
+      for(var keys=0;keys<docs.length;keys++){
+      var list = docs[keys];
+      %>
+     <div class="js-vserson"></div>
+      <div class="m-movies clearfix">
+        <h1 class="title">
+          <strong>
+            <a href="<%=list.href%>"> <%=list.title%></a>
+          </strong>
+          <a class="more" href="<%=list.href%>">
+            更多<i>&gt;&gt;</i>
+          </a>
+        </h1>
+        <%- include include/itemPage.html%>
+      </div>
+      <%
+      }
+      %>
+
+<%- include include/foot.html%>

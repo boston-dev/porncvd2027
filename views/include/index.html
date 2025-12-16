@@ -1,0 +1,39 @@
+<%
+for(var keys=0;keys<docs.length;keys++){
+var item = docs[keys];
+%>
+<article class="u-movie">
+    <a title="<%=item[`title${tplLang}`]%>"
+       href="<%=tplBase%><%= item.href ? item.href : '/javs/'+item._id+'.html'%>"
+    >
+        <div class="list-poster">
+            <img  class="lazyload"
+                  data="item.site == 'avday'"
+                  src="https://ae01.alicdn.com/kf/Hb947fd654e534c84a94fd8d27f4feb16l.jpg/images/thumbnail.png/images/thumbnail.png"
+                  alt="<%=item[`title${tplLang}`]%>"
+            <%
+            if(0){
+            %>
+            data-src="<%=item.img.replace(/.+thumb\//gi,'/upload/')%>"
+            <%
+            }else{
+            %>
+            data-src="<%=item.img%>"
+            <%
+            }
+            %>
+            class="thumb"/>
+        </div>
+        <h2><%=item[`title${tplLang}`] || item[`title`]%></h2>
+        <%
+        if(item.desc){
+        %>
+        <div class="meta"><span class="tags"><%=item[`description${tplLang}`] || item[`description`]%></span></div>
+        <%
+        }
+        %>
+    </a>
+</article>
+<%
+}
+%>

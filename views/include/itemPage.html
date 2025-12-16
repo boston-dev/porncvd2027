@@ -1,0 +1,42 @@
+<%
+for(var keys=0;keys<list.docs.length;keys++){
+var item = list.docs[keys];
+%>
+<%
+if(item.title){
+%>
+<article class="u-movie js-u-movie-cont">
+
+        <a title="<%=item.title%>"
+        <%
+        if(item.href){
+        %>
+           href="<%=item.href%>"
+        <%
+        }else{
+        %>
+        href="<%='/detail/'+item.id+'.html'%>"
+        <%
+        }
+        %>
+        >
+            <div class="list-poster">
+                <img class="lazyload" src="https://ae01.alicdn.com/kf/Hb947fd654e534c84a94fd8d27f4feb16l.jpg/images/thumbnail.png/images/thumbnail.png"  data-src="<%=item.img%>" class="thumb"/>
+            </div>
+            <h2><%=item.title%></h2>
+        <%
+        if(item.description){
+        %>
+            <div class="meta"><span class="tags"> <%=item.description%></span></div>
+        <%
+        }
+        %>
+        </a>
+
+</article>
+<%
+}
+%>
+<%
+}
+%>

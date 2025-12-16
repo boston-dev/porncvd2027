@@ -1,0 +1,182 @@
+<style>
+    div,li,ul,p{
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .coupons-all{
+        display: flex;
+        height: 82px;
+        background: #FFFFFF;
+        border: 1px solid #E5E5E5;
+        margin-bottom: 16px;
+    }
+    .coupons-all .discount-off{
+        width:106px;
+        flex-grow: 0;
+        flex-shrink: 0;
+        background: linear-gradient(315deg, #FF165E 0%, #FD4D4D 100%);
+    }
+    .coupons-all .discount-off{
+        font-size: 18px;
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .coupons-all .discount-desc{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 16px;
+    }
+    .coupons-all .save{
+      color: #666;
+      text-align: left;
+    }
+    .coupons-all .chose{
+        width: 16px;
+        height: 16px;
+        background: #FFFFFF;
+        border: 2px solid #CCCCCC;
+        border-radius: 50%;
+        margin-right: 16px;
+    }
+    .coupons-all .chose-box{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .coupons-all.active .chose{
+        background: linear-gradient(135deg, #FD4D4D 0%, #FE165E 100%);
+        animation-name: scaleDraw;
+        animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite;
+        animation-duration: 1.8s;
+        color: #e30044 !important;
+    }
+    </style>
+    <div class="pay-page" style="">
+        <p style="
+        color: #ec585e;
+        padding: 24px 16px 16px;
+    font-size:20px;
+    font-weight: 700;">
+            <%=tplLang ?
+            'This video is a VIP exclusive video, buy the VIP immediately, and the whole library will be unlocked for you to see it! If the payment is successful, the page will be automatically unlocked, and the PayPal mailbox will receive the order number.' :
+            '該視頻為VIP獨享視頻,立即購買VIP，全館影片解鎖任你看到爽!支付成功，頁面自動解鎖，同時PayPal郵箱將會收到訂單編號。'
+            %>
+        </p>
+         <p style="padding: 0 0 8px 24px">
+             <span style=" color: #ec585e;"><%=tplLang ? Math.ceil(Date.now()/23564545)+' users have already purchased;': '已經有'+Math.ceil(Date.now()/23564545)+'名用戶購買;'%></span>
+             <%=tplLang ? 'Contact email for payment issues': '支付問題聯繫郵箱'%> :armandolailah70591@gmail.com
+         </p>
+        <%
+        for(var keys=0;keys<ordersList.length;keys++){
+        var item = ordersList[keys];
+        %>
+        <ul data-price=<%=item.price%> class="coupons-all coupons-all-js <%if(keys == 1){ %>active<%}%>">
+            <li class="discount-off">
+                <p><%=parseInt(item.price*5.3907)%> NT$</p>
+                <p><%=item.long%> <%=tplLang ? 'Days': '天'%> </p>
+            </li>
+            <li class="discount-desc">
+                <p>
+                    <%=parseInt(+item.price*5.3907)%> NT$ ≈ <%=item.price%><%=item.currency_code%>, <%=item.long%>
+                    <%
+                    if(!tplLang){
+                    %>
+                    天，輕鬆付款，全站影片純享
+                    <%
+                    }else{
+                    %>
+                    Days, easy payment, pure enjoyment of all-site videos
+                    <%
+                    }
+                    %>
+                </p>
+            </li>
+            <li class="chose-box js-chose">
+                <p class="chose "></p>
+            </li>
+        </ul>
+        <%
+        }
+        %>
+        <div id='paypal-button-container'></div>
+    </div>
+
+    <script>
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src = "https://www.paypal.com/sdk/js?currency=BRL&client-id=<%=client_id%>";
+        document.getElementsByTagName("head")[0].appendChild(script);
+        var content="<%=tplLang ? 'payment successful ?': '是否支付成功？'%>"
+        var content2="<%=tplLang ? 'Refresh the page after the order is placed successfully, the order number will be sent to your mailbox, the order number is the VIP logo, please keep in mind': '下單成功刷新頁面，訂單號將會發送到你的郵箱，訂單號為VIP的標識，請牢記'%>"
+
+        script.onload=function(){
+            $('.coupons-all-js').click(function(){
+                $('.coupons-all-js').removeClass('active')
+                $(this).addClass('active')
+            })
+            function getPrice(){
+                return $('.coupons-all-js.active').attr('data-price')
+            }
+            function recordFn(details){
+                $.ajax({
+                    type : "post",
+                    data:details,
+                    url : '/users/create',
+                    success : function(res) {
+                      if(res.result && res.result._id){
+                          //email_address
+                          layer.closeAll()
+                          layer.open({
+                              content: res.msg
+                              ,btn:'OK'
+                          });
+                          if(typeof comomn != "undefined"){
+                              comomn(res)
+                          }
+                      }else{
+                          if(typeof comomnError != "undefined"){
+                              comomnError(res)
+                          }
+                      }
+                    }
+                });
+            }
+            paypal.Buttons({
+                style: {
+                    layout:  'vertical',
+                    color:   'blue',
+                    shape:   'rect',
+                    label: 'buynow',
+                },
+                payment: function(data, actions) {
+                    // 2. Make a request to your server
+                    return actions.request.post('/paypal/create-payment',{
+                        test:1
+                    })
+                        .then(function(res) {
+                            // 3. Return res.id from the response
+                            return res.id;
+                        });
+                },
+                onAuthorize: function(data, actions) {
+                    // 2. Make a request to your server
+                    return actions.request.post('/paypal/execute-payment', {
+                        paymentID: data.paymentID,
+                        payerID:   data.payerID
+                    })
+                        .then(function(res) {
+                            // 3. Show the buyer a confirmation message.
+                        });
+                }
+            }).render('#paypal-button-container');
+            //This function displays Smart Payment Buttons on your web page
+        }
+
+    </script>
+

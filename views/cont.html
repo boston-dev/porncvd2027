@@ -1,0 +1,32 @@
+<%- include include/head.html%>
+
+<div class="m-movies clearfix">
+    <div class="filter-list">
+        <%
+        for(var keys=0;keys<filter.length;keys++){
+        var item = filter[keys];
+        %>
+        <dl class="tagcloud">
+            <dt><%=item.title%></dt>
+            <dd>
+                <%
+                for(var key=0;key<item.docs.length;key++){
+                var one = item.docs[key];
+                %>
+                <a class="tag-cloud-link tag-link-94 tag-link-position-1 <%=one.class%>" href="<%=one.href%>">
+                    <%=one.title%>
+                </a>
+                <%
+                }
+                %>
+            </dd>
+        </dl>
+        <%
+        }
+        %>
+    </div>
+
+    <%- include include/itemPage.html%>
+    <%- include include/page.html%>
+</div>
+<%- include include/foot.html%>

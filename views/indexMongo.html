@@ -1,0 +1,83 @@
+<%- include include/head.html%>
+
+
+<div class="js-vserson"></div>
+<div class="m-movies clearfix">
+  <%
+  for(var keys=0;keys<docs.length;keys++){
+  var item = docs[keys];
+  %>
+  <article class="u-movie">
+    <a title="<%=item[`title${tplLang}`] || item[`title`]%>"
+       href="<%=tplBase%><%= item.href ? item.href : '/javs/'+item._id+'.html'%>"
+    >
+    <div class="list-poster">
+      <img
+              class="lazyload"
+              data="item.site == 'avday'"
+              src="https://ae01.alicdn.com/kf/Hb947fd654e534c84a94fd8d27f4feb16l.jpg/images/thumbnail.png/images/thumbnail.png"
+      <%
+      if(0){
+      %>
+      data-src="<%=item.img.replace(/.+thumb\//gi,'/upload/')%>"
+      <%
+       }else{
+      %>
+        data-src="<%=item.img%>"
+      <%
+      }
+      %>
+              alt="<%=item[`title${tplLang}`] || item[`title`]%>"
+              class="thumb"/>
+    </div>
+    <h2><%=item[`title${tplLang}`] || item[`title`]%></h2>
+    <%
+    if(item.description){
+    %>
+    <div class="meta"><span class="tags"> <%=item[`description${tplLang}`] || item[`description`]%></span></div>
+    <%
+    }
+    %>
+    </a>
+  </article>
+  <%
+  }
+  %>
+
+  <div class="pagination pagination-multi">
+
+
+
+    <%
+    if(typeof range != "undefined"){
+    %>
+    <ul>
+      <%
+      for(let k=0;k<range.length;k++){
+      %>
+      <li class="<%=range[k].class%>">
+        <%
+        if(range[k].href){
+        %>
+        <a href="<%=tplBase%><%=range[k].href%>"><%=range[k].text%></a>
+        <%
+        }else{
+        %>
+        <a href="javascript:;"><%=range[k].text%></a>
+        <%
+        }
+        %>
+      </li>
+      <%
+      }
+      %>
+    </ul>
+    <%
+    }
+    %>
+  </div>
+
+</div>
+
+
+<%- include include/foot.html%>

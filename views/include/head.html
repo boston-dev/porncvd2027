@@ -1,0 +1,172 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <%- include meta.html%>
+    <meta name="clckd" content="0a930448b31b0d1dbb7862bb3f8ef4bd" />
+    <link rel='stylesheet' type='text/css' href='https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/style/css/style.css'/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/style/js/jquery.min.js"></script>
+    <script type='text/javascript' src='https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/style/js/head.js'></script>
+    <!--[if lt IE 9]><script type='text/javascript' src='https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/style//js/html5.js'></script><![endif]-->
+    <style>a:hover, a:focus,.post-like.actived,.excerpt h2 a:hover,.user-welcome strong,.article-title a:hover,#comments b,.text-muted a:hover,.relates a:hover,.archives .item:hover h3,.linkcat h2,.sticky a:hover,.article-content a:hover,.nav li.current-menu-item > a, .nav li.current-menu-parent > a, .nav li.current_page_item > a, .nav li.current-posa,.article-meta a:hover,.excerpt h2 a span,.article-title a span,.most-comment-posts li > a span,.widget_postlist .items-01 .text span{color:#e7a519;}.article-tags a,.search-form .btn,#bdcs .bdcs-search-form-submit,.widget_tags_inner a:hover:hover,.focusmo a:hover h4,.tagslist .tagname:hover,.pagination ul > li.next-page > a{background-color:#e7a519;}.label-important,.badge-important{background-color:#e7a519;}.label-important .label-arrow,.badge-important .label-arrow{border-left-color:#e7a519;}.title strong{border-bottom-color:#e7a519;}#submit{background: #e7a519;border-right: 2px solid #e7a519;border-bottom: 2px solid #e7a519;}
+    @media (max-width:720px){
+        .ui-navtop .logo, .logo{background-color:#e7a519;        }
+        .nav li.current-menu-item > a, .nav li.current-menu-parent > a,
+        .nav li.current_page_item > a, .nav li.current-post-ancestor > a{border-bottom-color:#e7a519;}
+    }
+    @media (min-width:719px){
+        .logo{
+            display: none !important;
+        }
+    }
+        .head-tag{
+            display: inline-block;
+            color: #ffffff;
+            background-color:#444;
+            border-color: #999;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 4px;
+        }
+    </style></head>
+<body class="home blog search_not focusslide_s_m ui-navtop zh">
+<style>
+    .list-poster{
+        box-shadow: none;
+        height: 2.5rem;
+    }
+
+    .content, .ui-navtop .content{
+        margin-right: 0;
+    }
+    *{
+        padding: 0;
+        margin: 0;
+        font-style: normal;
+    }
+    .video_info{
+        float: none;
+        width: auto;
+    }
+    .ui-navtop section.container{
+        background-color: #FFF !important;
+
+    }
+    .carousel-indicators{
+        width: 100%;
+    }
+    .search_not .header .search-form{
+        display: block;
+    }
+
+
+    .dplayer.dplayer-hide-controller{
+        height: 100%;
+    }
+    .video_list_li a:visited{
+        background-color: #444444;
+        margin-right: 2px;
+        border: 1px solid #444444;
+        padding: 8px 5px;
+        display: inline-block;
+        border-radius: 4px;
+        color: #fff;
+        margin: 0.1rem;
+        margin-top: 0.2rem;
+        cursor: pointer;
+        min-width: 1.3rem;
+        text-align: center;
+    }
+    .video_list_li a.visited, .video_list_li a:hover {
+        color: #444;
+        background-color: #fff;
+        border: 1px solid #444;
+    }
+    .pagination ul > li{
+        display: inline-block !important;
+    }
+    .filter-list a.on, .filter-list a:hover {
+        color: #fff;
+        background-color: #FF6600;
+        text-shadow: 1px 1px 2px #000;
+    }
+    .filter-list a {
+        font-size: 14px;
+        color: #999;
+        margin: 0 0 0 10px;
+        display: inline;
+        height: 24px;
+        padding: 0 10px;
+    }
+    .hidden{
+        display: none;
+    }
+    .more-header{
+        height: auto !important;
+        top: 100% !important;
+    }
+    .more-header .nav{
+        height: auto !important;
+    }
+     .nav{
+         padding: 0 !important;
+     }
+     .nav-lang a{
+         color: #FFF !important;
+         font-weight: bold;
+     }
+    .nav-lang a:hover{
+        color: #fff !important;
+    }
+    @media (max-width: 720px){
+        .ui-navtop .nav{
+            display: flex;
+            flex-wrap: wrap;
+            height: auto;
+        }
+    }
+</style>
+<%- include main.html%>
+<script>
+    $(function () {
+        $('.j-lang a').click(function () {
+            var speclarr =['/videos','/video','/detail','/vshow','/filter','xvideos'],off=false;
+            console.log(speclarr)
+            speclarr.forEach(function (v) {
+                console.log(location.href.indexOf(v),v)
+                if(location.href.indexOf(v) > -1){
+                    off=true
+                    return false
+                }
+            })
+            if(off){
+                layer.open({
+                    content: 'This page is not translated'
+                    ,btn: 'ok'
+                });
+               return false
+            }
+            var lang=$(this).attr('data-url')
+            if(lang){
+                if(location.href.indexOf('/english') > -1){
+                    return  false
+                }
+               location.href=lang+location.pathname+location.search
+            }else{
+                location.href=location.href.replace('/english','')
+            }
+        })
+        $('.js-cat-btn').click(function (e) {
+            $('.js-header').toggleClass('hidden')
+            e.stopPropagation();
+        })
+        $('body').click(function (e) {
+            $('.js-header').addClass('hidden')
+            e.stopPropagation();
+        })
+
+    })
+</script>
+<section class="container">
+    <div class="content-wrap">
+        <div class="content">
+

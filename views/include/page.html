@@ -1,0 +1,60 @@
+
+<div class="pagination pagination-multi">
+
+    <%
+    if(typeof page != "undefined" && !page.range){
+    %>
+    <ul>
+        <%
+        for(var keys=0;keys<page.length;keys++){
+        var item = page[keys];
+        %>
+        <li class="<%=item.class%>">
+            <%
+            if(item.href){
+            %>
+            <a href="<%=item.href%>"><%=item.title%></a>
+            <%
+            }else{
+            %>
+            <a href="javascript:;"><%=item.title%></a>
+            <%
+            }
+            %>
+        </li>
+        <%
+        }
+        %>
+    </ul>
+    <%
+    }
+    %>
+
+    <%
+    if(typeof page != "undefined" && page.range){
+    %>
+    <ul>
+        <%
+        for(let k=0;k<page.range.length;k++){
+        %>
+        <li class="<%=page.range[k].class%>">
+            <%
+            if(page.range[k].href){
+            %>
+            <a href="<%=page.range[k].href%>"><%=page.range[k].text%></a>
+            <%
+            }else{
+            %>
+            <a href="javascript:;"><%=page.range[k].text%></a>
+            <%
+            }
+            %>
+        </li>
+        <%
+        }
+        %>
+    </ul>
+    <%
+    }
+    %>
+</div>

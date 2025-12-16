@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="">
+    <link rel="icon" href="favicon.ico">
+    <title><%=meta.title%></title>
+    <meta name="keywords" content="<%=meta.keywords%>">
+    <meta name="description" content="<%=meta.desc%>">
+    <!-- Bootstrap 核心CSS -->
+    <link rel="stylesheet" href="https://code.z01.com/v4/dist/css/bootstrap.min.css" >
+    <style>
+        body { padding-top: 3.5rem; }
+        .line2{
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            height: 48px;
+        }
+        a{
+            color: #333 ;
+        }
+        a:hover{
+            color: #000;
+        }
+        .hidden{
+            display: none;
+        }
+        .navbar-nav .nav-link{
+
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark"> <a class="navbar-brand" href="#">Navbar</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation"> <span class="navbar-toggler-icon"></span> </button>
+    <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+        <ul class="navbar-nav mr-auto">
+            <%
+            for(var keys=0;keys<nav.length;keys++){
+            %>
+            <li class="nav-item"> <a class="nav-link active" href="<%=nav[keys].href%>"><%=nav[keys].title%></a> </li>
+            <%
+            }
+            %>
+        </ul>
+        <form class="form-inline my-2 my-lg-0">
+            <input class="form-control mr-sm-2" type="text" placeholder="关键字" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">搜 索</button>
+        </form>
+    </div>
+</nav>
+<main role="main">

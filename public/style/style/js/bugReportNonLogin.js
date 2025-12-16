@@ -1,0 +1,1 @@
+$(function(){$('.notLogin').click(function(){$('#errorModal').find('#errorModal-msg').html('請先登入會員才能回報問題，謝謝。');$('#errorModal').find('#errorModal-btn-close').addClass('d-none');$('#errorModal').find('#errorModal-btn-login').removeClass('d-none');$('#errorModal').modal('show');});});

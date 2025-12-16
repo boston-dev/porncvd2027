@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="juicyads-site-verification" content="a96d24db2da66299e192b9b713d2ab71">
+    <meta name="shenma-site-verification" content="50720d993aea6d6ed902fa6b1e9c117a_1716104500">
+    <%- include meta.html%>
+    <link href="/style/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/style/css/app.css" rel="stylesheet">
+    <link href="/style/css/home.css" rel="stylesheet">
+    <link href="/style/css/video.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/style/js/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/layer_mobile/js.cookie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dplayer@1.26.0/dist/DPlayer.min.js"></script>
+    <style>
+        .header{
+            position: static;
+        }
+    </style>
+    <script>
+        if(['ko-kr'].includes((navigator.language||navigator.userLanguage).toLowerCase())){
+            location.href='https://bvujarg.xyz'
+        }
+        if(location.href.indexOf('token') > -1){
+            localStorage.setItem('token', 'Tom');
+        }
+    </script>
+</head>    
+<body>
+<header class=" header d-flex flex-column align-items-center" >
+    <div style="flex-wrap: wrap" class=" d-flex align-items-center my-2" >
+        <nav>
+            <div class="menu-container">
+                <ul class="nav">
+
+                    <li
+                            class="nav-list">
+                        <a href="/">
+                            首页
+                        </a></li>
+
+                    <%
+                    if(curSite){
+                        gNav=genreNav
+                    }
+                    for(var keys=0;keys<gNav.filter((v,k) => k<=8).length;keys++){
+                    let item = gNav[keys];
+                    %>
+                            <%
+                            if(item.href){
+                            %>
+                            <li class="nav-list"><a class="js-nav-head "
+                                target="_blank" 
+                                href="<%=item.href%>"
+                                ><%=item.text%></a></li>
+                            <%
+                            }else{
+                            %>
+                            <li class="nav-list"><a class="js-nav-head "
+    
+                                href="/cat/<%=item%>/<%=curSite ? `?site=${curSite}` : ''%>"
+                                ><%=item%></a></li>
+                            <%
+                            }
+                            %>
+                    <%
+                    }
+                    %>
+
+                </ul>
+            </div>
+        </nav>
+        <form id="searchDesktopForm" class="search" action="/search/javs">
+            <input class="search-txt" type="text" name="search_query" placeholder="search" value="">
+            <input class="btn" type="submit" value="Search"
+                   style="background:url(&quot;https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/se2.png&quot;) no-repeat center center #ec585e;text-indent: -99999px">
+        </form>
+    </div>
+    <div style="background-color: #1a1a1a;width: 100%">
+        <div style="padding: 8px 0;flex-wrap: wrap" class="d-flex  justify-content-center">
+            <ul class=" d-flex  align-items-center" style="overflow-x: auto;">
+                <%
+                let navOther= gNav.filter((v,k) => k>8);
+                for(let keys=0;keys<navOther.length;keys++){
+                let item = navOther[keys];
+                %>
+                            <%
+                            if(item.href){
+                            %>
+                            <li class="nav-list"><a class="js-nav-head mr-1"
+                                target="_blank" 
+                                href="<%=item.href%>"
+                                >
+                                <span class="iconicfill-hash text-danger "></span><%=item.text%>
+                            </a></li>
+                            <%
+                            }else{
+                            %>
+                            <li class="nav-list"><a class="js-nav-head mr-1"
+    
+                                href="/cat/<%=item%>/"
+                                >
+                                <span class="iconicfill-hash text-danger "></span><%=item%>
+                            </a></li>
+                            <%
+                            }
+                            %>
+                <%
+                }
+                %>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<script>
+    var docs=[]
+    $('#main-nav .nav-desktop-items').each(function(){
+        docs.push($(this).text().trim())
+    })
+</script>
+<div class="container container-content no-cate-container-content" >
+    <div class="main mobile-main">
+         <%- include pic.html%>
+        <section>
+
+            <!--            <div class="list-title mobile-list-title mt-3">-->
+            <!--                <div class="title-line"></div>-->
+            <!--                <h2>短片最新</h2>-->
+            <!--                <div class="clearfix"></div>-->
+            <!--            </div>-->

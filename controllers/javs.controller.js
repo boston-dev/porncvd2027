@@ -1,0 +1,169 @@
+'use strict';
+
+const asyncHandler = require('../utils/asyncHandler');
+const { detailLimiter } = require('../middleware/rateLimit');
+const renderFallback = require('../utils/renderFallback');
+
+const Jav = require('../models/Jav');
+
+/**
+ * 线上一致：字段不改、集合不改、分页使用 mongoose-paginate-v2
+ * 视图模板：继续用你线上 porncvd.com 的 ejs（home/search/tag/cat/nice/boot 等）
+ */
+
+function escReg(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+exports.home = asyncHandler(async (req, res) => {
+  // 首页：最新
+  const page = 1;
+  const limit = 40;
+  const query = { disable: { $ne: 1 } };
+
+  const result = await Jav.paginate(query, {
+    page,
+    limit,
+    sort: { date: -1 },
+    select: 'title title_en img url site tag cat date id path vipView  source',
+    lean: true,
+    leanWithId: false,
+  });
+  if(req.query.ajax){
+            return  res.send( result);
+        }
+  return res.render('boot', result);
+});
+
+exports.search = asyncHandler(async (req, res) => {
+  const qRaw = (req.query.search_query || '').trim();
+  const page = Math.max(1, parseInt(req.params.p || '1', 10));
+  const limit = 40;
+
+  // 防刷：太长直接拒绝（避免 regex 被滥用）
+  if (qRaw.length > 60) return res.status(400).send('Bad Request');
+
+  const query = { };
+  if (qRaw) {
+    const reg = new RegExp(escReg(qRaw), 'i');
+    query.$or = [
+      { title: reg },
+      { desc: reg },
+    ];
+  }
+  const result = await Jav.paginate(query, {
+    page,
+    limit,
+    sort: { date: -1 },
+    select: 'title title_en img url site tag cat date id path vipView  source',
+    lean: true,
+    leanWithId: false,
+  });
+
+  result.search_query = qRaw;
+  return res.render('boot', result);
+});
+
+
+function escapeRegExp(str = '') {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+exports.tag = asyncHandler(async (req, res) => {
+  const name = decodeURIComponent((req.params.name || '').trim());
+  const page = Math.max(1, parseInt(req.params.p || '1', 10));
+  const limit = 40;
+
+  if (!name) return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
+    const keywords = Array.isArray(name) ? name : [name];
+    const optRegexp = keywords
+      .filter(Boolean)
+      .map(k => new RegExp(escapeRegExp(k.trim()), 'i'));
+
+    const query = optRegexp.length
+      ? { tag: { $in: optRegexp } }
+      : {}; // 没关键词就不加条件，避免 $in: []
+      console.log(query)
+  const result = await Jav.paginate(query, {
+    page,
+    limit,
+    sort: { date: -1 },
+    select: 'title title_en img url site tag cat date id path vipView  source',
+    lean: true,
+    leanWithId: false,
+  });
+
+  result.name = name;
+  return res.render('boot', result);
+});
+
+/**
+ * Detail: strongest stability.
+ * - detail limiter
+ * - ObjectId regex validation BEFORE hitting Mongo
+ * - unified fallback page on invalid/404
+ */
+exports.detail = [
+  detailLimiter,
+  asyncHandler(async (req, res) => {
+    if (req.url.includes('/javs/realte.html')) return res.redirect('/');
+
+    const raw = req.params.id || '';
+    const id = raw.replace(/\.html$/i, '');
+    console.log(req.params.id,'----------')
+    // ✅ fast ObjectId regex validation
+    if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
+      return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
+    }
+    const video = await Jav.findById(id).select({
+      url: 1,
+      keywords: 1,
+      desc: 1,
+      title: 1,
+      source: 1,
+      img: 1,
+      tag: 1,
+      site: 1,
+      disable: 1,
+      title_en: 1,
+      keywords_en: 1,
+      desc_en: 1,
+      cat: 1,
+      date: 1,
+      id: 1,
+      path: 1,
+      vipView: 1,
+      actor: 1,
+      type: 1,
+    }).lean();
+
+    if (!video || video.disable === 1) {
+      return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
+    }
+
+    res.locals.meta = {
+      title: video.title,
+      keywords: video.keywords || String(video.tag || ''),
+      desc: video.desc,
+      title_en: video.title_en,
+      keywords_en: video.keywords_en,
+      desc_en: video.desc_en,
+    };
+    const tags = Array.isArray(video.tag) ? video.tag.filter(Boolean) : [];
+    const relateDoc = {
+      _id: { $ne: video._id },
+      ...(tags.length ? { tag: { $in: tags } } : {}),
+    };
+    if (video.site === 'hanime') relateDoc.site = { $eq: 'hanime' };
+    else relateDoc.site = { $ne: 'hanime' };
+
+    const docs = await Jav.find(relateDoc)
+      .sort({ date: -1 })
+      .limit(22)
+      .select({ title: 1, img: 1, site: 1, tag: 1, cat: 1, date: 1, id: 1, path: 1 ,source: 1,})
+      .lean();
+    const fentData={ video,docs}
+    if (req.query.ajax) return res.send(fentData);
+
+    return res.render('nice', fentData);
+  }),
+];

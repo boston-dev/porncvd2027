@@ -1,0 +1,83 @@
+
+
+<header class="header" >
+    <div class="container header">
+        <ul class="nav" >
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="/english">
+                    Home
+                </a></li>
+            <%
+            for(var keys=0;keys<cliphunterNav.length;keys++){
+            %>
+            <%
+            if(keys < 6){
+            %>
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="<%=tplBase%><%=cliphunterNav[keys].href%>"><%=cliphunterNav[keys][`title${tplLang}`]%></a></li>
+            <%
+            }
+            %>
+            <%
+            }
+            %>
+
+            <!--<li class="js-cat-btn"><a href="javascript:;">
+
+                More
+            </a></li>-->
+        </ul>
+        <form method="get" class="search-form" action="/thudam/search"><input class="form-control" name="search_query"
+                                                                              type="text" placeholder="search"
+                                                                              value=""><input class="btn"
+                                                                                              type="submit"
+                                                                                              value="Search"></form>
+    </div>
+    <script>
+        /*$(function () {
+
+            $('[name="search_query"]').blur(function () {
+
+                var str =$(this).val().trim()
+                console.log(str)
+                if(str){
+                    var sc='/cliphunter/search/'
+                    $('.search-form').attr('action',sc+str)
+                }
+            })
+
+
+            $('.search-form').submit(function( event ) {
+                var str =$('[name="search_query"]').val().trim()
+                if(str){
+                    var sc='/cliphunter/search/'
+                    $('.search-form').attr('action',sc+str)
+                    location.href= $('.search-form').attr('action')
+                }
+
+                event.preventDefault();
+            });
+        })*/
+    </script>
+   <!-- <div class="container header more-header js-header hidden">
+        <ul class="nav">
+            <%
+            for(var keys=0;keys<cliphunterNav.length;keys++){
+            %>
+            <%
+            if(keys >= 5){
+            %>
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="<%=tplBase%><%=cliphunterNav[keys].href%>"><%=cliphunterNav[keys][`title${tplLang}`]%></a></li>
+            <%
+            }
+            %>
+            <%
+            }
+            %>
+        </ul>
+    </div>-->
+</header>

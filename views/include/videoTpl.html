@@ -1,0 +1,75 @@
+<%
+if(typeof docs != "undefined"){
+%>
+<div class="row video-list mobile-row">
+    <%
+    for(var keys=0;keys<docs.length;keys++){
+    var item = docs[keys];
+    %>
+    <div class="col-sm-6 col-md-4 col-lg-3">
+        <div class="mb-4">
+            <div class="position-relative">
+                <a  href="<%= item.href ? item.href : '/javs/'+item._id+'.html'%>">
+                    <img class="img-fluid rounded lazyload video-list-image  "
+                         data-src="<%=item.img%>"
+                         title="<%=item.title%>"
+                         src="https://puui.qpic.cn/vupload/0/common_pic_v.png/0"
+                         alt="<%=item.title%>"
+                    />
+                </a>
+                <!--                <div class="position-absolute icon-block icon-block-short-mobile">-->
+                <!--                    <div class="float-left length-icon"><%=item.time%></div>-->
+                <!--                    <div class="clearfix"></div>-->
+                <!--                </div>-->
+            </div>
+            <div class="mt-1">
+                <h3 style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; " class="video-title video-title-short-mobile">
+                    <a href="<%=item.href%>"
+                       itemprop="url"><span itemprop="name"><%=item.title%></span></a>
+                </h3>
+                <div class="mt-1 video-list-counter">
+                    <div class="float-left"><span class="iconicfill-eye"></span> <%=(Math.random()+'').match(/[1-9]/gi)[0]%>k</div>
+                    <div class="float-right"><span class="iconicfill-heart-fill"></span> <%=(Math.random()+'').match(/[1-9]/gi)[0]%>k</div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%
+    }
+    %>
+</div>
+<%
+}
+%>
+<%
+if(typeof range != "undefined"){
+%>
+<div class="d-flex align-items-center justify-content-center">
+    <ul class="pagination">
+        <%
+        for(let k=0;k<range.length;k++){
+        %>
+        <li class="page-item  <%=range[k].class%>">
+            <%
+            if(range[k].href){
+            %>
+            <a class="page-link" href="<%=range[k].href%>"><%=range[k].text%></a>
+            <%
+            }else{
+            %>
+            <a class="page-link" href="javascript:;"><%=range[k].text%></a>
+            <%
+            }
+            %>
+        </li>
+        <%
+        }
+        %>
+    </ul>
+</div>
+
+<%
+}
+%>
+

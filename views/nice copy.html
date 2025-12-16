@@ -1,0 +1,310 @@
+<%- include include/boot-head.html%>
+<div class="container px-0">
+
+<style>
+    .el-input__inner {
+        -webkit-appearance: none;
+        background-color: #fff;
+        background-image: none;
+        border-radius: 4px;
+        border: 1px solid #dcdfe6;
+        box-sizing: border-box;
+        color: #606266;
+        display: inline-block;
+        font-size: inherit;
+        height: 40px;
+        line-height: 40px;
+        outline: none;
+        padding: 0 15px;
+        transition: border-color .2s cubic-bezier(.645,.045,.355,1);
+        width: 100%;
+    }
+    .el-button {
+        display: inline-block;
+        line-height: 1;
+        white-space: nowrap;
+        cursor: pointer;
+        background: #fff;
+        border: 1px solid #dcdfe6;
+        color: #606266;
+        -webkit-appearance: none;
+        text-align: center;
+        box-sizing: border-box;
+        outline: none;
+        margin: 0;
+        transition: .1s;
+        font-weight: 500;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        padding: 12px 20px;
+        font-size: 14px;
+        border-radius: 4px;
+        color: #fff;
+        background-color: #67c23a;
+        border-color: #67c23a;
+    }
+</style>
+
+<div class="my-2 px-1 videotitle">
+    <h4 class="vtitle min-mx--30 ">
+        <%
+        if(video.site == 'avday'){
+        %>
+    <a href="javascript:;" style="    color: #ec585e;
+    padding: 0 8px;
+    font-size: 20px;
+    font-weight: 700;"><%=tplLang ? '(VIP exclusive,vip No ads )': 'VIP獨享,vip無廣告'%> </a>
+    <%
+    }
+    %>
+     <span><%=video[`title${tplLang}`]%></span></h4>
+</div>
+<div class="js-vserson hidden"></div>
+<div class="hidden js-vaid-box">
+    <div style="display: flex;" >
+        <input type="text" autocomplete="off" placeholder="<%=tplLang ? 'Already a VIP? Please enter the order number to verify VIP': '已經是VIP?,請輸入訂單號驗證VIP'%>" class="el-input__inner js-code">
+        <button type="button" class="el-button el-button--success is-round js-check " ><!----><!----><span><%=tplLang ? 'Verify VIP': '驗證VIP'%> </span></button>
+    </div>
+</div>
+<div class="mgplaylist" style="position: relative">
+
+    <div class="playerbox <%if(!video.url){%> hidden <%}%>" id="playerbox">
+
+        <nav id="dplayer">
+
+        </nav>
+    </div>
+    <p></p>
+    <p class="js-vip-date hidden my-1" style="
+     color: #ec585e;
+     line-height: 1;
+     padding: 8px;
+    font-size:14px;
+    font-weight: 700;">
+        vip <%=tplLang ? 'Still remaining': '還剩餘'%> <span class="js-vip-date-text"></span> <%=tplLang ? 'day': '天'%>，
+        <%=tplLang ? 'Please keep in mind the order id:': '請牢記訂單id:'%> <span class="js-id-str"></span>
+    </p>
+    <div class="js-handler my-2">
+        <button type="button" class="btn js-replay btn-outline-primary"><%=tplLang ? 'can not play? Click to replay': '無法播放？點擊重播'%></button>
+    </div>
+    <div class="js-vserson hidden"></div>
+    <%
+    if(video.tag && video.tag){
+    %>
+    <div class="min-mx--30 px-1 my-1">
+        <%
+        for(let k=0;k<video.tag.length;k++){
+        %>
+        <a href="/tag/<%=video.tag[k]%>/" class="btn my-1 btn-secondary btn-sm"><%=video.tag[k]%></a>
+
+        <%
+        }
+        %>
+    </div>
+    <%
+    }
+    %>
+
+    <div style="color: #b8babc;" class="min-mx--30 px-1 videotitle">
+        <p><%=video[`desc${tplLang}`] || video[`desc`]%></p>
+    </div>
+
+
+
+
+    <div class="m-movies js-m-movies clearfix">
+        <h1 class="title min-mx--30 px-1">
+            <strong>
+                <a href="javascript:;">
+                    Related video
+                </a>
+            </strong>
+        </h1>
+        <div class="js-vserson"></div>
+        <%
+        if(typeof video.docs != "undefined" && video.docs.length){
+        %>
+        <%- include include/boot-list.html%>
+        <%
+        }
+        %>
+
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dplayer@1.26.0/dist/DPlayer.min.js"></script>
+<input type="hidden" id="video-in" data-text="<%=tplLang ? 'The order number is a vip certificate, please copy and keep it, remember' : '訂單號為vip憑證，請複制保持，切記' %>" value="<%= video.url %>">
+<script>
+    var url=document.querySelector('#video-in').value
+        <%
+        if(video.site == 'avday'){
+        %>
+            url="https://av.pornavd.com"+url+'&n='+ Math.random()
+        <%
+        }
+        %>
+    var time=0
+    var dp = new DPlayer({
+        container: document.getElementById('dplayer'),
+        autoplay: true,
+        theme: '#FADFA3',
+        loop: true,
+        lang: 'zh-cn',
+        screenshot: true,
+        hotkey: true,
+        preload: 'auto',
+        /*logo: '/favicon.ico',*/
+        volume: 0.7,
+        mutex: true,
+        video: {
+           url:url,
+           pic:" <%= video.img %>",
+            thumbnails:" <%= video.img %>",
+            type: 'auto',
+        },
+    });
+    var trys=false;
+    function switchFn() {
+        dp.switchVideo({url:url})
+        setTimeout(function () {
+            dp.play()
+        },6000)
+    }
+    setTimeout(function () {
+        console.log(9900,111)
+        if(!dp.video.duration){
+            console.log(9900,222)
+            switchFn()
+        }
+
+    },9900)
+    $('.js-replay').click(function () {
+        switchFn()
+    })
+    var isVaid=false
+    <%
+    if(video.site == 'avday'){
+    %>
+    dp.on('timeupdate', function (e) {
+        // if(dp.video.duration > 60*2 && dp.video.currentTime > 72 && !isVaid && !$('.pay-page').length){
+        //     $('.js-vaid-box').removeClass('hidden')
+        //     vaid()
+        // }
+    });
+    <%
+    }
+    %>
+    $('.js-check').click(function (e) {
+        vaid(e)
+    })
+    function isMobile(){
+            var info = navigator.userAgent;
+            var agents = ["Android", "iPhone", "SymbianOS", "Windows Phone", "iPod", "iPad"];
+            for(var i = 0; i < agents.length; i++){
+                if(info.indexOf(agents[i]) >= 0) return true;
+            }
+            return false;
+    }
+    function comomn(tpl) {
+        dp.play()
+        $('.playerbox').slideDown(1500)
+        $('.pay-page').slideUp(1500)
+        $('.js-vip-date').removeClass('hidden')
+        $('.js-vip-date-text').html(tpl.result.end)
+        var text=$('#video-in').attr('data-text')
+        text+='id:'+tpl.result.id+''
+        $('.js-id-str').text(tpl.result.id)
+        $('.js-handler').show()
+    }
+    function comomnError(tpl) {
+        dp.pause()
+        $('.playerbox').slideUp(1500)
+        setTimeout(function () {
+            $('#dplayer').remove()
+        },1500)
+        if(!$('.pay-page').length){
+            $('.playerbox').slideUp(1500).after(tpl)
+        }
+        $('.pay-page').slideDown(1500)
+        $('.js-handler').hide()
+        $('.js-vserson').remove()
+    }
+    var loading=false
+    function vaid(e){
+        if(!loading)
+        var e=e
+        if(e){
+            layer.open({
+                type: 2,
+                shadeClose: false,
+                time: 3,
+                content: 'loading'
+            });
+        }
+        if(time > 12){
+            layer.open({
+                type: 2,
+                shadeClose: false,
+                time: 3,
+                content: 'Don’t click frequently'
+            });
+            return false
+        }
+        time++
+        loading=true
+        $.ajax({
+            type : "post",
+            url : '/users/vaid',
+            data:{id:$('.js-code').val(),m:isMobile()},
+            success : function(tpl) {
+                time++
+                isVaid=true
+                loading=false
+                if(tpl.code !== 200){
+                    comomnError(tpl)
+                }else{
+                    //location.reload()
+                    comomn(tpl)
+                }
+            }
+        });
+    }
+
+        <%
+        if(video.site !== 'avday'){
+        %>
+        $.ajax({
+            type : "post",
+            url : '/javs/realte.html',
+            dataType : "html",
+            data:{
+                video: {
+                    site:"<%= video.site %>",
+                }
+            },
+            success : function(res) {
+                $('.js-m-movies').append(res)
+                lazyload.update()
+            }
+        })
+        <%
+        }
+        %>
+
+
+</script>
+<script>
+          window["051441ofyghs808273hdqmgl"] = {
+            zoneId: 1888683,
+            domain: "//cresfpho2ntesepapillo3.com",
+            options: {
+              insteadOfSelectors: ["#playerbox"],
+              insteadOfPlayers: ["other"]
+            }
+          }
+        </script>
+        <script src="https://cresfpho2ntesepapillo3.com/zbs.kek.js"></script>
+</div>
+<%- include include/boot-footer.html%>

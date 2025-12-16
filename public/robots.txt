@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /thudam/
+Disallow: /detail/
+Disallow: /video/
+Disallow: /list/
+Disallow: /nav/
+Disallow: /categories/ 
+Disallow: /xnxx/
+Disallow: /gallery/
+

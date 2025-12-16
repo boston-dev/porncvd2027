@@ -1,0 +1,202 @@
+
+
+<header class="header" >
+    <div class="container header">
+<!--        <p class="logo j-lang">-->
+<!--            <a href="javascript:;">中文</a>-->
+<!--            <a href="javascript:;" data-url="/english">English</a>-->
+<!--        </p>-->
+        <ul class="nav" >
+            <%
+            if(!tplLang){
+            %>
+            <li
+                    class="menu-item nav-lang menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="https://uk.porncvd.com" >English</a></li>
+            <%
+            }else{
+            %>
+            <li
+                    class="menu-item nav-lang menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="https://porncvd.com">中文</a>
+                <%
+                }
+                %>
+
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="<%=tplBase ? tplBase : '/' %>">
+
+                    <%
+                    if(tplLang){
+                    %>
+                    Home
+                    <%
+                    }else{
+                    %>
+                    首页
+                    <%
+                    }
+                    %>
+                </a></li>
+
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="<%=tplBase%>/nav/all">
+                    <%
+                    if(tplLang){
+                    %>
+                    All
+                    <%
+                    }else{
+                    %>
+                    全部
+                    <%
+                    }
+                    %>
+                </a></li>
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="/cc18/videos/?&page=1">
+                    <%=tplLang ? 'asian' :'国产'%>
+                </a></li>
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="/hsex/list-1.htm">
+
+                    <%=tplLang ? 'Couple' :'夫妻'%>
+                </a></li>
+            <%
+            for(var keys=0;keys<navAll.length;keys++){
+            %>
+            <%
+            if(keys < navSize){
+            %>
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a  href="<%=tplBase%><%=navAll[keys].href.replace('videos','nav')%>">
+
+                    <%
+                    if(navAll[keys].href.indexOf('exclusive') > -1 || navAll[keys].href.indexOf('popular') > -1){
+                    %>
+                    <span class="drawing" style="box-shadow: 3px 3px 6px #666;" ><%=navAll[keys][`title${tplLang}`]%></span>
+                    <%
+                    }else{navAll
+                    %>
+                    <%=navAll[keys][`title${tplLang}`]%>
+                    <%
+                    }
+                    %>
+                </a></li>
+            <%
+            }
+            %>
+            <%
+            }
+            %>
+
+            <li class="js-cat-btn"><a href="javascript:;">
+
+                <%
+                if(tplLang){
+                %>
+                More
+                <%
+                }else{
+                %>
+                更多
+                <%
+                }
+                %>
+            </a></li>
+
+        </ul>
+        <form style="width: 200px;margin-left: 0" method="get" class="search-form" action="<%=tplBase%>/search/javs"><input class="form-control" name="search_query"
+                                                                                        type="text" placeholder="search"
+                                                                                        value=""><input class="btn"
+                                                                                                        type="submit"
+                                                                                                        value="Search" style='background:url("https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/se2.png") no-repeat center center #e7a519'></form>
+    </div>
+    <div class="container header more-header js-header hidden">
+        <ul class="nav">
+
+            <%
+            for(var keys=0;keys<navAll.length;keys++){
+            %>
+            <%
+            if(keys >= navSize){
+            %>
+            <li
+                    class="menu-item menu-item-type-custom menu-item-object-custom current-menu-item menu-item-home menu-item-12">
+                <a href="<%=tplBase%><%=navAll[keys].href.replace('videos','nav')%>"><%=navAll[keys][`title${tplLang}`]%></a></li>
+            <%
+            }
+            %>
+            <%
+            }
+            %>
+        </ul>
+    </div>
+</header>
+<style>
+    .dispaly-hide{
+        display: none;
+    }
+</style>
+<div style="max-width: 1080px;margin: 0 auto">
+    <%- include vip.html%>
+</div>
+<%
+if(!avday){
+%>
+<div style="max-width: 1080px;margin: 0 auto">
+    <%
+    for(let k=0;k<pornNav.length;k++){
+    %>
+    <a class="head-tag <% if(k > 14) {%> dispaly-hide<%}%>" href="<%=pornNav[k].href%>">
+        <%=pornNav[k][`title${tplLang}`]%>
+    </a>
+    <%
+    }
+    %>
+</div>
+<%
+}else{
+%>
+<div style="max-width: 1080px;margin: 0 auto">
+    <%
+    if(typeof porn5filter != "undefined"){
+    %>
+    <%
+    for(let k=0;k<porn5filter.length;k++){
+    %>
+    <a class="head-tag <% if(k > 20) {%> dispaly-hide<%}%>" href="/tag/<%=porn5filter[k]%>/">
+        <%=tplLang ? porn5filter_en[k]: porn5filter[k]%>
+    </a>
+    <%
+    }
+    %>
+    <a class="head-tag js-dispaly-hide" style="background-color: #FF5E52" href="javascript:void(0);"><%=tplLang ? 'Show All': '查看全部'%></a>
+    <%
+    }
+    %>
+</div>
+<%
+}
+%>
+
+<script>
+    $(function () {
+        //
+
+        $('.js-dispaly-hide').click(function () {
+            if($('.dispaly-hide').is(":hidden")){
+                $('.dispaly-hide').css('display','inline-block')
+                $(this).text("<%=tplLang ? 'Hide': '隱藏'%>")
+            }else {
+                $('.dispaly-hide').hide()
+                $(this).text("<%=tplLang ? 'Show All': '查看全部'%>")
+            }
+        })
+    })
+</script>

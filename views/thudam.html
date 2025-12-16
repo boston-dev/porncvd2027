@@ -1,0 +1,77 @@
+<%- include include/head.html%>
+<div class="js-vserson hidden"></div>
+<%
+if(list.video && list.video.url){
+%>
+
+<div class="openload" id="playerbox" style="position: relative">
+
+</div>
+<script>
+    $(function () {
+        $('.openload').append('    <iframe id="openloadvideo" class="openloadvideo" src="<%=list.video.url%>" frameborder=0 scrolling=no allowfullscreen=allowfullscreen sandbox="allow-same-origin allow-scripts"></iframe>\n')
+
+    })
+</script>
+<%
+}
+%>
+<div class="js-vserson hidden"></div>
+<%- include include/itemPage.html%>
+<input type="hidden" class="pageNum" value="<%=pageNum%>">
+<script>
+    var page=$('.pageNum').val(),load=false,finish=false
+    var loadAll =function () {
+            load=true
+            page=parseInt(page)+1
+            $('boay').addClass('over-hide')
+            $.ajax({
+                type : "get",
+                url : location.pathname,
+                data:{
+                    ajax:1,
+                    page:page
+                },
+                success : function(res) {
+                    if(res.list && res.list.docs && res.list.docs.length){
+                        href="/xvideos/v/35311537/sex-ktv/"
+                        var html=''
+                        if(res.list.docs.length < 27){
+                            finish=true
+                        }
+                        res.list.docs.forEach(function (item) {
+                           if(item.title){
+                               html+='<article class="u-movie js-u-movie">'+
+                                   ' <a title="'+item.title+'" href="'+item.href+'"'+
+                                   '<div class="list-poster">'+
+                                   '<img   src="'+item.img+'" class="thumb"/>'+
+                                   '</div>'+
+                                   '<h2>'+item.title+'</h2>'+
+
+                                   '</a>'+
+                                   '</article>';
+                           }
+
+                        })
+                        $('.pageNum').before(html)
+                    }else{
+                        finish=true
+                    }
+                    setTimeout(function () {
+                        load=false
+                    },500)
+                    layer.closeAll('loading');
+                    $('boay').removeClass('over-hide')
+                }
+            });
+    }
+    loadAll()
+    $(window).scroll(function () {
+        if(["/thudam/search","/thudam"].includes(location.pathname) || load || finish ||  location.href.indexOf('/v/') > -1) return false
+        if($(window).height()+$(window).scrollTop() + 800 > $('body').outerHeight()){
+            loadAll()
+        }
+
+    })
+</script>
+<%- include include/foot.html%>

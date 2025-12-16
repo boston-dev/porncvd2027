@@ -1,0 +1,53 @@
+<%- include head.html%>
+
+<link rel="stylesheet" href="/dist/css/lightgallery.css">
+    <div class="container-fluid">
+        <!-- Example row of columns -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card" style="width: 18rem;">
+                    <img class="lazyload img-thumbnail" data-src="<%=video.img%>" alt="">
+                    <div class="card-body">
+                        <h5 class="card-title"><%=video.title%></h5>
+                        <p class="card-text"><%=video.desc%></p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-md-9">
+                <div class="row gallery ssg fs vipssg" id="lightgallery">
+                    <%
+                    for(var keys=0;keys<video.thumb.length;keys++){
+                    %>
+                    <div class="col-md-2 col-6 p-0" data-src="<%=video.thumb[keys].big%>">
+
+                        <img class="card-img-top img-thumbnail " src="<%=video.thumb[keys].img%>" alt="<%=video.thumb[keys].title%>">
+
+                    </div>
+                    <%
+                    }
+                    %>
+                </div>
+                <div class="row">
+                    <div class="col-12 p-0 m-1">
+                        <button  type="button" style="width: 84%" class="btn btn-primary mt-2">View All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+
+
+<%- include foot.html%>
+<!-- A jQuery plugin that adds cross-browser mouse wheel support. (Optional) -->
+<script type="text/javascript">
+    $(document).ready(function(){
+        $('#lightgallery').lightGallery();
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/picturefill/2.3.1/picturefill.min.js"></script>
+<script src="/dist/js/lightgallery-all.js"></script>
+<script src="/dist/js/jquery.mousewheel.min.js"></script>

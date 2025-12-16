@@ -1,0 +1,22 @@
+{
+  "name": "porncvd-stable",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PornCVD stable production backend (Express + Mongoose)",
+  "main": "app.js",
+  "scripts": {
+    "start": "NODE_ENV=production node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "ejs": "~2.6.1",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.0",
+    "helmet": "^7.1.0",
+    "mongoose": "^8.6.0",
+    "mongoose-paginate-v2": "^1.8.5",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.11"
+  }
+}

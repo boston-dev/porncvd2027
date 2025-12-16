@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html lang="zh_tw" data-livestyle-extension="available" class="img-blur">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv=content-type content="text/html; charset=UTF-8" />
+    <title>熱銷排行 | 情趣夢天堂｜情趣用品 </title>
+    <meta name="description" content="情趣用品,情趣夢天堂｜台北最大情趣用品專賣店，所有你需要的成人玩具都在這！" />
+    <meta name="keywords" content="情趣用品,情趣,R20,無口娘,自慰套,飛機杯,按摩棒,跳蛋,情趣睡衣,真人娃娃,保險套,潤滑液" />
+    <link rel="canonical" href="https://new.dp-toy.com/" />
+    <link rel="shortcut icon" href="https://new.dp-toy.com/static/icon/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="/style/dp-pc.css">
+    <link rel="stylesheet" href="/style/color.css">
+</head>
+
+<body>
+    <link rel="stylesheet" href="/style/dp-pc.css">
+    <link rel="stylesheet" href="/style/color.css">
+    <div class="team-show-up extra round-corner list-x">
+        <span class="title">熱門推薦</span>
+        <ul class="content" style="width: max-content;">
+            <%
+            for(var keys=0;keys<docs.length;keys++){
+            var item = docs[keys];
+            %>
+            <li class="item round-corner">
+                <ul class="list-y" >
+                    <li class="img" >
+                        <a target="_blank" title="<%=item.title%>"   href="<%=item.href%>">
+                            <img src="<%=item.img%>" alt="<%=item.title%>" style="max-width: 100%;max-height: 100%;">
+                        </a>
+
+                    </li>
+                    <li class="name">
+                        <small>
+					<a target="_blank"  href="<%=item.href%>" title="<%=item.title%>"><%=item.title%></a>
+					</small>
+                    </li>
+                </ul>
+            </li>
+              <%
+                }
+                %>
+        </ul>
+    </div>
+</body>
+
+</html>

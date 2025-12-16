@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <%- include meta.html%>
+    <link href="/style/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/style/css/app.css" rel="stylesheet">
+    <link href="/style/css/home.css" rel="stylesheet">
+    <link href="/style/css/video.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/style/js/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/layer_mobile/js.cookie.min.js"></script>
+    <style>
+        .header{
+            position: static;
+        }
+    </style>
+    <script>
+        if((navigator.language||navigator.userLanguage).toLowerCase() == 'ko-kr'){
+            location.href='https://www.youtube.com/'
+        }
+        if(location.href.indexOf('token') > -1){
+            localStorage.setItem('token', 'Tom');
+        }
+    </script>
+    <meta name="juicyads-site-verification" content="0d5eec54730b35f5111ca755bb2f6135">
+<body>
+<header class=" header d-flex flex-column align-items-center" >
+    <div style="flex-wrap: wrap" class=" d-flex align-items-center my-2" >
+        <nav>
+            <div class="menu-container">
+                <ul class="nav">
+                    <li
+                            class="nav-list">
+                        <a href="/">
+
+                            <%
+                            if(tplLang){
+                            %>
+                            Home
+                            <%
+                            }else{
+                            %>
+                            首页
+                            <%
+                            }
+                            %>
+                        </a></li>
+                    <%
+                    for(var keys=0;keys<porn5Nav.nav.length;keys++){
+                    let item = porn5Nav.nav[keys];
+                    %>
+                    <li class="nav-list"><a href="<%=item.href%>"><%=item[`title${tplLang}`] || item[`title`]%></a></li>
+                    <%
+                    }
+                    %>
+                </ul>
+            </div>
+        </nav>
+        <form id="searchDesktopForm" class="search" action="/search/javs">
+            <input class="search-txt" type="text" name="search_query" placeholder="搜尋" value="">
+            <input class="btn" type="submit" value="Search"
+                   style="background:url(&quot;https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/se2.png&quot;) no-repeat center center #ec585e;text-indent: -99999px">
+        </form>
+    </div>
+    <div style="background-color: #1a1a1a;width: 100%">
+        <div style="padding: 8px 0;flex-wrap: wrap" class="d-flex  justify-content-center">
+            <ul class=" d-flex  align-items-center"  style="flex-wrap: wrap">
+                <li class=" ml-2">
+                    <a  href="https://cvdtv.com/">
+                  友情鏈接：</a>
+                </li>
+                <li class=" ml-2">
+                    <a target="_blank"  href="https://cvdtv.com/">
+
+                        <span class="iconicfill-hash text-danger"></span>電視劇</a>
+                </li>
+                <li class=" ml-2">
+                    <a target="_blank"  href="https://www.porn7f.com/">
+
+                        <span class="iconicfill-hash text-danger"></span>A片自拍</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+
+<div class="container container-content no-cate-container-content" >
+    <div class="main mobile-main">
+         <%- include pic.html%>
+        <section>
+
+            <!--            <div class="list-title mobile-list-title mt-3">-->
+            <!--                <div class="title-line"></div>-->
+            <!--                <h2>短片最新</h2>-->
+            <!--                <div class="clearfix"></div>-->
+            <!--            </div>-->

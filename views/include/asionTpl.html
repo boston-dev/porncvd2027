@@ -1,0 +1,23 @@
+<div class="m-movies js-m-movies clearfix"  >
+
+</div>
+<script>
+    $(function () {
+        $.ajax({
+            type : "post",
+            url : '<%=tplBase%>/javs/realte.html',
+            dataType : "html",
+            data:{
+                video: {
+                    site:'porn5f',
+                    size:6
+                }
+            },
+            success : function(res) {
+                $('.js-u-movie-cont').remove()
+                $('.js-m-movies').append(res)
+                lazyload.update()
+            }
+        })
+    })
+</script>

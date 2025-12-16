@@ -1,0 +1,140 @@
+<%- include include/head.html%>
+<div class="js-vserson hidden"></div>
+<div class="videotitle">
+    <h4 class="vtitle"><a href="javascript:;"> </a><span><%=video[`title${tplLang}`]%></span></h4>
+</div>
+
+<div class="mgplaylist">
+
+    <div class="playerbox <%if(!video.url){%> hidden <%}%>" id="playerbox">
+
+        <nav id="dplayer">
+
+        </nav>
+    </div>
+
+    <a class="head-tag js-replay" style="background-color: #FF5E52" href="javascript:void(0);">
+        <%=tplLang ? 'can not play? Click to replay': '無法播放？點擊重播'%>
+    </a>
+    <%
+    if(video.tag && video.tag){
+    %>
+
+    <div>
+        <%
+        for(let k=0;k<video.tag.length;k++){
+        %>
+        <a class="head-tag "  href="/tag/<%=video.tag[k]%>/"><%=video.tag[k]%></a>
+        <%
+        }
+        %>
+    </div>
+
+    <%
+    }
+    %>
+    <div class="js-vserson hidden"></div>
+    <div class="videotitle">
+        <p><%=video[`desc${tplLang}`] || video[`desc`]%></p>
+    </div>
+
+
+
+
+    <div class="m-movies js-m-movies clearfix">
+        <h1 class="title">
+            <strong>
+                <a href="javascript:;">
+                    Related video
+
+
+                </a>
+            </strong>
+        </h1>
+        <div class="js-vserson"></div>
+        <%
+        if(typeof video.docs != "undefined" && video.docs.length){
+        %>
+        <%- include include/videoTpl.html%>
+        <%
+        }
+        %>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dplayer@1.26.0/dist/DPlayer.min.js"></script>
+<input type="hidden" id="video-in" value="<%= video.url %>">
+
+<script>
+    var url=document.querySelector('#video-in').value
+        <%
+        if(video.site == 'avday'){
+        %>
+            url=url+'&n='+ Math.random()
+        <%
+        }
+        %>
+
+    var dp = new DPlayer({
+        container: document.getElementById('dplayer'),
+        autoplay: true,
+        theme: '#FADFA3',
+        loop: true,
+        lang: 'zh-cn',
+        screenshot: true,
+        hotkey: true,
+        preload: 'auto',
+        /*logo: '/favicon.ico',*/
+        volume: 0.7,
+        mutex: true,
+        video: {
+           url:url,
+           pic:" <%= video.img %>",
+            thumbnails:" <%= video.img %>",
+            type: 'auto',
+        },
+    });
+    var trys=false;
+    function switchFn() {
+        dp.switchVideo({url:url})
+        setTimeout(function () {
+            dp.play()
+        },6000)
+    }
+    setTimeout(function () {
+        console.log(9900,111)
+        if(!dp.video.duration){
+            console.log(9900,222)
+            switchFn()
+        }
+
+    },9900)
+    $('.js-replay').click(function () {
+        switchFn()
+    })
+    if(location.href.indexOf('xnxx') < 0){
+        $.ajax({
+            type : "post",
+            url : '<%=tplBase%>/javs/realte.html',
+            dataType : "html",
+            data:{
+                video: {
+                    site:"<%= video.site %>",
+                    relate:"<%= video.relate %>"
+                }
+            },
+            success : function(res) {
+                $('.js-m-movies').append(res)
+                lazyload.update()
+            }
+        })
+    }
+
+    setTimeout(function () {
+        dp.play()
+    },300)
+</script>
+<%- include include/foot.html%>

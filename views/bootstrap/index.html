@@ -1,0 +1,56 @@
+<%- include head.html%>
+
+
+    <div class="container-fluid">
+        <!-- Example row of columns -->
+        <div class="row">
+            <%
+            for(var keys=0;keys<docs.length;keys++){
+            %>
+            <div class="col-md-2 col-6 p-0">
+                <a class="card m-1" href="<%=docs[keys].href%>" >
+                    <img class="card-img-top img-thumbnail" src="<%=docs[keys].img%>" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title line2"><%=docs[keys].title%></h5>
+
+                    </div>
+                </a>
+            </div>
+            <%
+            }
+            %>
+        </div>
+        <nav aria-label="...">
+            <ul class="pagination">
+                <%
+                for(var keys=0;keys<page.length;keys++){
+                let item=page[keys]
+                %>
+                <%
+                if(item.href.indexOf('javascript') > -1){
+                %>
+                <li class="page-item active">
+                      <span class="page-link">
+                        <%=item.text%>
+                        <span class="sr-only">(current)</span>
+                      </span>
+                </li>
+                <%
+                }else{
+                %>
+
+                    <li class="page-item">
+                        <a class="page-link" href="<%=item.href%>"><%=item.text%></a>
+                    </li>
+                <%
+                }
+                %>
+                <%
+                }
+                %>
+            </ul>
+        </nav>
+    </div>
+
+
+<%- include foot.html%>

@@ -1,0 +1,28 @@
+</main>
+<footer class="container">
+    <p>&copy; Company 2017</p>
+</footer>
+
+<!-- Bootstrap 核心 JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js"></script>
+<script src="https://code.z01.com/js/jquery-3.2.1.slim.min.js" ></script>
+<script src="https://code.z01.com/v4/dist/js/popper.min.js"></script>
+<script src="https://code.z01.com/v4/dist/js/bootstrap.min.js" ></script>
+<script>
+    var lazyload = new LazyLoad({
+        elements_selector: '.lazyload',
+        class_loading: 'lazy-loading',
+        class_loaded: 'lazy-loaded',
+        attr_to_webp: 'data-not-to-webp',
+        //parentLoadingClass: LOADING_PARENT_CLASS,
+        callback_error: function (el) {
+            // 背景图不存在不触发此回调
+            var src = el.getAttribute('data-src').replace(/\.webp/gi, '');
+            if (el.tagName === 'IMG') {
+                el.setAttribute('src', src);
+            }
+        }
+    });
+</script>
+</body>
+</html>
