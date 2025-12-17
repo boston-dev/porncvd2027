@@ -159,11 +159,11 @@ exports.detail = [
 
     const raw = req.params.id || '';
     const id = raw.replace(/\.html$/i, '');
-    console.log(req.params.id,'----------')
     // ✅ fast ObjectId regex validation
     if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
+      
     const video = await Jav.findById(id).select({
       url: 1,
       keywords: 1,
@@ -190,14 +190,7 @@ exports.detail = [
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
 
-    res.locals.meta = {
-      title: video.title,
-      keywords: video.keywords || String(video.tag || ''),
-      desc: video.desc,
-      title_en: video.title_en,
-      keywords_en: video.keywords_en,
-      desc_en: video.desc_en,
-    };
+   
     const tags = Array.isArray(video.tag) ? video.tag.filter(Boolean) : [];
     const relateDoc = {
       _id: { $ne: video._id },
@@ -212,6 +205,38 @@ exports.detail = [
       .select({ title: 1, img: 1, site: 1, tag: 1, cat: 1, date: 1, id: 1, path: 1 ,source: 1,})
       .lean();
     const fentData={ video,docs}
+
+    const SITE = process.env.SITE_URL || 'https://porncvd.com';
+    const url = `${SITE}/javs/${video._id}.html`;
+    const title = video.title || 'Video';
+    const desc = (video.desc || title).slice(0, 160);
+    const m3u8 =`${video.source}${video.url}`
+    const img=`${video.source}${video.img}`
+   const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
+    res.locals.meta={
+      title: `${title} - ${process.env.SITE_NAME}`,
+      keywords: Array.isArray(video.tag) ? video.tag.join(',') : '',
+      desc,
+      canonical: url,
+
+      og: {
+        type: 'video.other',
+        title,
+        desc,
+        image: img
+      },
+
+      // ✅ VideoObject（SEO 核心）
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": title,
+        "description": desc,
+        "thumbnailUrl":img,
+        "uploadDate": uploadDate,
+        "embedUrl": url
+      }
+    }
     if (req.query.ajax) return res.send(fentData);
 
     return res.render('nice', fentData);

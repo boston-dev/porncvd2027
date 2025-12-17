@@ -7,8 +7,21 @@
 <meta name="applicable-device" content="pc,mobile">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
 <title><%=meta[`title${tplLang}`] || meta[`title`]%></title>
+<% if (meta && meta.canonical) { %>
+<link rel="canonical" href="<%= meta.canonical %>">
+<% } %>
 <meta name="keywords" content="<%=meta[`keywords${tplLang}`] || meta[`keywords`]%>">
 <meta name="description" content="<%=meta[`desc${tplLang}`] || meta[`desc`]%>">
+<% if (meta && meta.og) { %>
+<meta property="og:type" content="<%= meta.og.type || 'website' %>">
+<meta property="og:title" content="<%= meta.og.title || meta.title %>">
+<meta property="og:description" content="<%= meta.og.desc || meta.desc %>">
+<meta property="og:url" content="<%= meta.canonical %>">
+<% if (meta.og.image) { %>
+<meta property="og:image" content="<%= meta.og.image %>">
+<% } %>
+<% } %>
+
 <meta name="author" content="porncvd.com" />
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ME8E2N0LEQ"></script>
@@ -19,3 +32,8 @@
 
   gtag('config', 'G-ME8E2N0LEQ');
 </script>
+<% if (meta && meta.jsonLd) { %>
+<script type="application/ld+json">
+<%- JSON.stringify(meta.jsonLd) %>
+</script>
+<% } %>
