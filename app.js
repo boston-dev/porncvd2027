@@ -125,7 +125,7 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 async function start() {
   await connectMongoWithRetry();
   const port = Number(process.env.PORT || 4350);
-  const host = process.env.HOST || 'localhost';
+  const host ='127.0.0.1' //0.0.0.0 'localhost';
   app.listen(port, host, () => {
     console.log(`[server] listening on http://${host}:${port} env=${process.env.NODE_ENV || 'development'}`);
   });

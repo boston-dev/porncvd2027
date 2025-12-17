@@ -1,6 +1,7 @@
 'use strict';
 
 const asyncHandler = require('../utils/asyncHandler');
+const { buildListMeta} = require('../utils/buildMeta');
 const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
 const renderFallback = require('../utils/renderFallback');
 
@@ -121,6 +122,14 @@ exports.tag = asyncHandler(async (req, res) => {
     leanWithId: false,
   });
   result.name = name;
+  res.locals.meta = buildListMeta({
+    req,
+    type: req.path.startsWith('/tag') ? 'tag' :'cat',
+    name,
+    page,
+    totalPages: result.totalPages, // 你 paginate 的返回
+    siteName: process.env.SITE_NAME
+  });
   Object.assign(result,{
     ...withPageRange(result,{prelink})
   })
@@ -189,7 +198,9 @@ exports.detail = [
     if (!video || video.disable === 1) {
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
-
+    if(video.site == 'hanime'){
+            res.locals.curSite='hanime'
+     }
    
     const tags = Array.isArray(video.tag) ? video.tag.filter(Boolean) : [];
     const relateDoc = {
@@ -242,3 +253,49 @@ exports.detail = [
     return res.render('nice', fentData);
   }),
 ];
+exports.resourcePost = asyncHandler(async (req, res) => {
+  const obj = req.body || {};
+
+  // 基础校验：避免空写入/脏数据
+  if (!obj.id || !obj.site) {
+    return res.status(400).json({ ok: false, msg: 'id 和 site 必填' });
+  }
+
+  // 只允许更新的字段（白名单），避免别人塞奇怪字段进库
+  const allow = [
+    'title', 'title_en', 'keywords', 'keywords_en', 'desc', 'desc_en',
+    'img', 'url', 'site', 'tag', 'cat', 'date', 'path', 'vipView', 'source', 'id'
+  ];
+
+  const $set = {};
+  for (const k of allow) {
+    if (obj[k] !== undefined) $set[k] = obj[k];
+  }
+
+  // upsert：有就更新，没有就创建
+  const doc = await Jav.findOneAndUpdate(
+    { id: obj.id, site: obj.site },
+    { $set },
+    {
+      upsert: true,
+      new: true,              // 返回更新后的文档
+      setDefaultsOnInsert: true,
+    }
+  ).lean();
+
+  return res.json({ ok: true, data: doc });
+});
+
+exports.resourceFind = asyncHandler(async (req, res) => {
+  const obj = req.body || {};
+  // upsert：有就更新，没有就创建
+  const doc = await Jav.findOne(obj).lean();
+  if(doc){
+   return {
+    code:600,
+    msg:'已经存在',
+    data:doc
+   }
+  }
+  return res.json({ code: 200, data: doc });
+});
