@@ -7,6 +7,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const gNav = require('./nav.json');
+const genreNav = require('./genreNav.json');
 const routes = require('./routes');
 const { requestId, requestLogger } = require('./middleware/requestLogger');
 const { notFound, errorHandler } = require('./middleware/errors');
@@ -51,6 +52,7 @@ app.use( async (req,res,next) => {
     res.locals.curSite=''
    res.locals.tplLang=''
    res.locals.orders_id=''
+   res.locals.genreNav=genreNav
   res.locals.meta={
     "title": "porncvd - 素人av/免費A片/流出/性愛自拍/素人/成人無碼/免費成人/台灣自拍",
     "keywords": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",

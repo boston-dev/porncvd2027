@@ -42,7 +42,94 @@
         }
     });
 </script>
-				
+<script>
+  $(function () {
+    // 每个广告展示几次，再切到下一个
+    var repeatTimes = 2;
+
+    $.ajax({
+      url: 'https://v.viet123.tv/api/snippets', // { listTop: [...], listBtm: [...] }
+      type: 'GET',
+      dataType: 'json',
+      success: function (data) {
+        var listTop = data.listTop || [];
+        var listBtm = data.listBtm || [];
+        var listLeft = data.listLeft || [];
+        repeatTimes=data.repeatTimes || repeatTimes
+        // 顶部广告轮播
+        if (Array.isArray(listTop) && listTop.length) {
+          rotateAds({
+            list: listTop,
+            pos: 'top',                 // 标记位置
+            repeatTimes: repeatTimes
+          });
+        }
+
+        // 底部广告轮播
+        if (Array.isArray(listBtm) && listBtm.length) {
+          rotateAds({
+            list: listBtm,
+            pos: 'btm',
+            repeatTimes: repeatTimes
+          });
+        }
+        // 左侧
+        if (Array.isArray(listLeft) && listLeft.length) {
+          rotateAds({
+            list: listLeft,
+            pos: 'left',
+            repeatTimes: repeatTimes
+          });
+        }
+      },
+      error: function (xhr) {
+        console.error('加载广告列表失败', xhr);
+      }
+    });
+
+    // 封装一个轮播函数，pos = 'top' / 'btm'
+    function rotateAds (options) {
+      var list        = options.list;
+      var pos         = options.pos;           // 'top' or 'btm'
+      var repeatTimes = options.repeatTimes;
+
+      // 每个位置自己的 key，全站统一
+      var keyIndex = 'snippet_index_' + pos;
+      var keyShown = 'snippet_shown_' + pos;
+
+      var idx   = parseInt(localStorage.getItem(keyIndex), 10);
+      var shown = parseInt(localStorage.getItem(keyShown), 10);
+
+      if (isNaN(idx)   || idx   >= list.length) idx   = 0;
+      if (isNaN(shown) || shown < 0)            shown = 0;
+
+      var src = list[idx];
+
+      // 删掉之前这个位置的广告脚本
+      $('script[data-ad="' + pos + '"]').remove();
+
+      // 插入当前广告脚本
+      $('<script>', {
+        src: src,
+        async: true,
+        'data-ad': pos
+      }).appendTo('body');
+
+      // 页面访问次数 +1
+      shown += 1;
+
+      // 展示 repeatTimes 次后，切到下一个
+      if (shown >= repeatTimes) {
+        shown = 0;
+        idx = (idx + 1) % list.length;
+      }
+
+      // 写回 localStorage
+      localStorage.setItem(keyIndex, idx);
+      localStorage.setItem(keyShown, shown);
+    }
+  });
+</script>				
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/layer_mobile/need/layer.css">
 <script src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/layer_mobile/layer.js"></script>
 

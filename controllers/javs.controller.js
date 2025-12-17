@@ -77,8 +77,20 @@ exports.search = asyncHandler(async (req, res) => {
 function escapeRegExp(str = '') {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+function buildPrelinkByUrl(req, pageTpl = 'pageTpl') {
+  // 原始路径：/cat/台灣/2  或 /tag/自拍  或 /genre/2
+  const base = req.path.replace(/\/+$/, ''); // 去掉末尾 /
+
+  // 如果末尾是 /数字  => 替换成 /pageTpl
+  if (/\/\d+$/.test(base)) {
+    return base.replace(/\/\d+$/, `/${pageTpl}`);
+  }
+
+  // 如果末尾不是数字 => 直接追加 /pageTpl
+  return `${base}/${pageTpl}`;
+}
 exports.tag = asyncHandler(async (req, res) => {
-  
+  const site= decodeURIComponent((req.query.site || '').trim())
   const name = decodeURIComponent((req.params.name || '').trim());
   const page = Math.max(1, parseInt(req.params.p || '1', 10));
   const limit = 40;
@@ -92,12 +104,14 @@ exports.tag = asyncHandler(async (req, res) => {
     const query = optRegexp.length
       ? { tag: { $in: optRegexp } }
       : {}; // 没关键词就不加条件，避免 $in: []
- let prelink='/?page=pageTpl' 
- if(req.path.startsWith('/cat')){
-   prelink=`/cat/${name}/pageTpl`
- }else if(req.path.startsWith('/tag')){
-  prelink=`/tag/${name}/pageTpl`
- }
+    let prelink = buildPrelinkByUrl(req);
+     if(site){
+      res.locals.curSite=site
+      Object.assign(query,{
+          site
+      })
+        prelink.includes('?') ? prelink+=`&site=${site}` : prelink+=`?site=${site}`
+    }
   const result = await Jav.paginate(query, {
     page,
     limit,
@@ -112,7 +126,26 @@ exports.tag = asyncHandler(async (req, res) => {
   })
   return res.render('boot', result);
 });
+exports.genre = asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(req.params.p || '1', 10));
+  const limit = 40;
+  res.locals.curSite='hanime'
+    const query = {site:{$eq:'hanime'}}
+  const prelink=`/genre/pageTpl`
+  const result = await Jav.paginate(query, {
+    page,
+    limit,
+    sort: { date: -1 },
+    select: 'title title_en img url site tag cat date id path vipView  source',
+    lean: true,
+    leanWithId: false,
+  });
 
+  Object.assign(result,{
+    ...withPageRange(result,{prelink})
+  })
+  return res.render('boot', result);
+});
 /**
  * Detail: strongest stability.
  * - detail limiter
