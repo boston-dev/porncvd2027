@@ -1,7 +1,7 @@
 'use strict';
 
 const asyncHandler = require('../utils/asyncHandler');
-const { detailLimiter } = require('../middleware/rateLimit');
+const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
 const renderFallback = require('../utils/renderFallback');
 
 const Jav = require('../models/Jav');
@@ -17,7 +17,7 @@ function escReg(s) {
 
 exports.home = asyncHandler(async (req, res) => {
   // 首页：最新
-  const page = 1;
+   const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const limit = 40;
   const query = { disable: { $ne: 1 } };
 
@@ -29,15 +29,18 @@ exports.home = asyncHandler(async (req, res) => {
     lean: true,
     leanWithId: false,
   });
+  Object.assign(result,{
+    ...withPageRange(result,{prelink:'/?page=pageTpl'})
+  })
   if(req.query.ajax){
-            return  res.send( result);
-        }
+       return  res.send( result);
+   }
   return res.render('boot', result);
 });
 
 exports.search = asyncHandler(async (req, res) => {
   const qRaw = (req.query.search_query || '').trim();
-  const page = Math.max(1, parseInt(req.params.p || '1', 10));
+  const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const limit = 40;
 
   // 防刷：太长直接拒绝（避免 regex 被滥用）
@@ -61,6 +64,12 @@ exports.search = asyncHandler(async (req, res) => {
   });
 
   result.search_query = qRaw;
+   Object.assign(result,{
+    ...withPageRange(result,{prelink:`/search/javs?search_query=${qRaw}&page=pageTpl`})
+  })
+   if(req.query.ajax){
+       return  res.send( result);
+   }
   return res.render('boot', result);
 });
 
@@ -69,6 +78,7 @@ function escapeRegExp(str = '') {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 exports.tag = asyncHandler(async (req, res) => {
+  
   const name = decodeURIComponent((req.params.name || '').trim());
   const page = Math.max(1, parseInt(req.params.p || '1', 10));
   const limit = 40;
@@ -82,7 +92,12 @@ exports.tag = asyncHandler(async (req, res) => {
     const query = optRegexp.length
       ? { tag: { $in: optRegexp } }
       : {}; // 没关键词就不加条件，避免 $in: []
-      console.log(query)
+ let prelink='/?page=pageTpl' 
+ if(req.path.startsWith('/cat')){
+   prelink=`/cat/${name}/pageTpl`
+ }else if(req.path.startsWith('/tag')){
+  prelink=`/tag/${name}/pageTpl`
+ }
   const result = await Jav.paginate(query, {
     page,
     limit,
@@ -91,8 +106,10 @@ exports.tag = asyncHandler(async (req, res) => {
     lean: true,
     leanWithId: false,
   });
-
   result.name = name;
+  Object.assign(result,{
+    ...withPageRange(result,{prelink})
+  })
   return res.render('boot', result);
 });
 

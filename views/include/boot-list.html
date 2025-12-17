@@ -2,14 +2,16 @@
     <%
     for(var keys=0;keys<docs.length;keys++){
     var item = docs[keys];
+    let href= item.href ? item.href : `/javs/${item._id}.html`
     %>
 
     <div class="col-sm-6 col-md-4 col-lg-3 js-view-item">
         <div class="mb-4">
             <div class="position-relative">
-                <a  href="<%= item.href ? item.href : '/javs/'+item._id+'.html'%>">
-                    <img class="img-fluid rounded lazyload video-list-image  "
-                         data-src="<%= item.source %><%=item.img%>" 
+                <a  href="<%=href%>">
+                     <!-- data-src="<%= item.source %><%=item.img%>"  -->
+                    <img class="img-fluid rounded lazyload video-list-image"
+                         data-src="https://puui.qpic.cn/vupload/0/common_pic_v.png/0"
                          title="<%=item[`title${tplLang}`] || item[`title`]%>"
                          src="https://puui.qpic.cn/vupload/0/common_pic_v.png/0"
                          alt="<%=item[`title${tplLang}`] || item[`title`]%>"
@@ -18,7 +20,7 @@
             </div>
             <div class="mt-1">
                 <h3 style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; " class="video-title video-title-short-mobile">
-                    <a href="<%=item.href%>"
+                    <a href="<%=href%>"
                        itemprop="url"><span itemprop="name"><%=item[`title${tplLang}`] || item[`title`]%></span></a>
                 </h3>
                 <div class="mt-1 video-list-counter">
