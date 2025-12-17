@@ -1,39 +1,54 @@
 'use strict';
+
 const Jav = require('../models/Jav');
 
-/**
- * Render a unified fallback page for 404 / errors.
- * - Shows random N videos to keep users engaged.
- * - Never throws; if DB fails, degrades gracefully.
- */
 module.exports = async function renderFallback(req, res, opts = {}) {
   const {
     status = 404,
-    view = 'boot',  // use your online template view
+    view = 'boot',
     limit = 16,
     message = '',
+    days = 30,
+    dateField = 'date', // 你的 ms 时间戳字段
   } = opts;
 
   try {
-    // Random sample (fast enough with index; if huge collection, consider precomputed list/cache)
-    const docs = await Jav.aggregate([
-      { $match: { disable: { $ne: 1 } } },
-      { $sample: { size: limit } },
-      { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1 } },
-    ]);
+    const sinceTs = Date.now() - days * 24 * 60 * 60 * 1000; // ms
 
-    // Keep shape similar to your existing boot render usage
-    const payload = {
+    // 1) 最近N天随机
+    let docs = await Jav.aggregate([
+      {
+        $match: {
+          disable: { $ne: 1 },
+          [dateField]: { $gte: sinceTs },
+        },
+      },
+      { $sample: { size: limit } },
+      { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1,source:1  } },
+    ]);
+    console.log(docs)
+    // 2) 不足就全站随机补齐
+    if (docs.length < limit) {
+      const need = limit - docs.length;
+      const existingIds = docs.map(d => d._id);
+
+      const more = await Jav.aggregate([
+        { $match: { disable: { $ne: 1 }, _id: { $nin: existingIds } } },
+        { $sample: { size: need } },
+        { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1,source:1 } },
+      ]);
+
+      docs = docs.concat(more);
+    }
+
+    return res.status(status).render(view, {
       docs,
       page: 1,
       total: docs.length,
       q: '',
       message,
-    };
-
-    return res.status(status).render(view, payload);
+    });
   } catch (e) {
-    // DB down or aggregate failed — return minimal page without leaking details
     return res.status(status).send(status === 404 ? 'Not Found' : 'Server Error');
   }
 };
