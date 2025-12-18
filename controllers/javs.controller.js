@@ -193,6 +193,7 @@ exports.detail = [
       vipView: 1,
       actor: 1,
       type: 1,
+      link:1,
     }).lean();
 
     if (!video || video.disable === 1) {

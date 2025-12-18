@@ -53,17 +53,17 @@ app.use( async (req,res,next) => {
    res.locals.tplLang=''
    res.locals.orders_id=''
    res.locals.genreNav=genreNav
-  res.locals.meta={
-    "title": "porncvd - 素人av/免費A片/流出/性愛自拍/素人/成人無碼/免費成人/台灣自拍",
-    "keywords": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",
-    "desc": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",
-    "title_zh": "porncvd - 素人av/免费A片/流出/性爱自拍/素人/成人无码/免费成人/台湾自拍",
-    "keywords_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",
-    "desc_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",
-    "title_en":'porncvd-Amateur AV/Free Porn/Outflow/Sex Selfie/Amateur/Uncensored Adult/Free Adult/Taiwan Selfie',
-    "keywords_en": 'Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source',
-    "desc_en": 'Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source',
-}
+ res.locals.meta={
+        "title": "91吃瓜 全网更新最快最全的吃瓜网！",
+        "keywords": "91吃瓜,91吃瓜网,91吃瓜,51,吃瓜,吃瓜网,朝阳群众吃瓜网,黑料,黑料不打烊,瓜报,一起吃瓜网,黑料吃瓜网,热门大瓜,明星资讯,网红黑料,内涵段子,今日吃瓜,",
+        "desc": "91吃瓜是全网更新最快最全的吃瓜网!",
+        "title_zh": "porncvd - 素人av/免费A片/流出/性爱自拍/素人/成人无码/免费成人/台湾自拍",
+        "keywords_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",
+        "desc_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",
+        "title_en":'porncvd-Amateur AV/Free Porn/Outflow/Sex Selfie/Amateur/Uncensored Adult/Free Adult/Taiwan Selfie',
+        "keywords_en": 'Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source',
+        "desc_en": 'Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source',
+    }
    next();
 })
 /** Routes */
@@ -75,7 +75,7 @@ app.use(errorHandler);
 
 /** --- Mongo connect with backoff (avoid infinite crash-loop) --- */
 async function connectMongoWithRetry() {
-  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/downM3u8';
+  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/cgc';
   const opts = {
     autoIndex: false,
     serverSelectionTimeoutMS: 8000,

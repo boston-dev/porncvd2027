@@ -2,6 +2,7 @@
 
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
+const { link } = require('../routes');
 const javsSchema = new mongoose.Schema({
   title:{type:String,default:''},
   title_en:{type:String,default:''},
@@ -15,6 +16,7 @@ const javsSchema = new mongoose.Schema({
   tran:Number,
   uri:{type:String,default:''},
   url:{type:String,default:''},
+  link:{type:Array,default:[]},
   relate:{type:Array,default:[]},
   cat:{type:Array,default:[]},
   date:{type:Number,default:new Date().getTime()},

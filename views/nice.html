@@ -2,6 +2,11 @@
 <div class="container px-0">
 
     <style>
+        .btn-active-primary {
+        color: #fff;
+        background-color: #007bff;
+        border-color: #007bff;
+        }
         .el-input__inner {
             -webkit-appearance: none;
             background-color: #fff;
@@ -59,25 +64,32 @@
     </div>
     <div class="mgplaylist" style="position: relative">
 
-        <div class="playerbox <%if(!video.url){%> hidden <%}%>" id="playerbox">
+        <div class="playerbox <%if(!video.link.length){%> hidden <%}%>"" id="playerbox">
 
             <nav id="dplayer">
 
             </nav>
         </div>
         <div >
-            <!--<h5>APP已上线，推荐APP</h5>-->
-            <!--<div>-->
-
- 
-            <!--    <a style="display: inline-block;margin: 2px;" href="https://www.migu.tv/?channelCode=114" target="_blank" rel="nofollow noopener noreferrer">-->
-            <!--        <div class="img-rounded image_1-1" style="height: 48px;width: 48px; background-image: url('https://txjgk87n.com/static/image/ic_launcher.png?_v=20211128');background-size: 100%;" alt="51漫画"></div>-->
-            <!--        <h8 style="text-align: center;">91糖心</h8>-->
-            <!--    </a>-->
-
-
-            <!--</div>-->
-        <!--</div>-->
+         <div class="js-handler my-2">
+           
+            <%
+            for(let k=0;k<video.link.length;k++){
+                var item = video.link[k];
+            %>
+            <button type="button" data-url="<%= video.source %><%=item.url%>" class="btn js-replay btn-outline-primary
+                <%
+            if(k == 0){
+            %>
+            btn-active-primary
+            <%
+            }
+            %>
+                    "><%=item.text%></button>
+                <%
+                    }
+                    %>
+         </div>
         <%
         if(video.tag && video.tag){
         %>
@@ -131,32 +143,14 @@
 
     </div>
     
-    <input type="hidden" data-type="<%-video.site%>" id="video-in" data-text="<%=tplLang ? 'The order number is a vip certificate, please copy and keep it, remember' : '訂單號為vip憑證，請複制保持，切記' %>" value="<%= video.url %>">
+    <input type="hidden" data-type="<%-video.site%>" id="video-in" data-text="<%=tplLang ? 'The order number is a vip certificate, please copy and keep it, remember' : '訂單號為vip憑證，請複制保持，切記' %>" value="<%= JSON.stringify(video.link) %>">
     <script>
-        function randomNum(minNum,maxNum){
-            switch(arguments.length){
-                case 1:
-                    return parseInt(Math.random()*minNum+1,10);
-                    break;
-                case 2:
-                    return parseInt(Math.random()*(maxNum-minNum+1)+minNum,10);
-                    break;
-                default:
-                    return 0;
-                    break;
-            }
-        }
-        var whitelist = ['https://mac.bvujarg.xyz','https://m.bvujarg.xyz','https://cdn.bvujarg.xyz','https://bvujarg.xyz']
-        
-            <%
-        if(video.site == 'avday'){
-        %>
-            url=whitelist[randomNum(0,3)]+url
-                <%
-        }
-        %>
-        var url=document.querySelector('#video-in').value
-        url= url.indexOf('http') == -1 ? "<%= video.source %>"+url : url
+        var source="<%= video.source %>"
+        var urlJSon=JSON.parse(document.querySelector('#video-in').value)
+        urlJSon.forEach(function (item) {
+            item.url=source+item.url
+        })
+        url=urlJSon.length ? urlJSon[0].url : ''
         var img="<%= video.img %>"
         img=img.indexOf('http') == -1 ? "<%= video.source %>"+img : img
         var types= $('#video-in').attr('data-type')
@@ -181,113 +175,16 @@
             },
         });
         var trys=false;
-        function switchFn() {
+        function switchFn(url) {
             dp.switchVideo({url:url})
-            setTimeout(function () {
-                dp.play()
-            },6000)
+            dp.play()
         }
-        // setTimeout(function () {
-        //     console.log(9900,111)
-        //     if(!dp.video.duration){
-        //         console.log(9900,222)
-        //         switchFn()
-        //     }
-
-        // },9900)
-        $('.js-replay').click(function () {
-            switchFn()
+        $('.js-replay').on('click',function () {
+            var url=$(this).attr('data-url')
+            $(this).addClass('btn-active-primary ').siblings().removeClass('btn-active-primary ')
+            switchFn(url)
         })
-        var isVaid=false
-        let appAll=Cookies.get('appView') ? JSON.parse(Cookies.get('appView')) : []
-        dp.on('timeupdate', function (e) {
-            if(!document.querySelector('.layui-m-layer') && !sessionStorage.getItem('token') && dp.video.currentTime > 120 && parseInt(dp.video.currentTime) % 10 == 0){
-                //testVip()
-                sessionStorage.setItem('token', 'Tom');
-            }
-            
-            if(dp.video.currentTime > 1 && !$('body').hasClass('load-ajax-all')){
-                    $('body').addClass('load-ajax-all')
-                   // vaidResult()
-                }
-            if(types == 'avday'){
-                if(!isMobile()){
-                    // if(dp.video.currentTime > 60*2 && !$('body').hasClass('load-tpl') ){
-                    //     $('body').addClass('load-tpl')
-                    //     dp.pause()
-                    //     vaid()
-                    // }
-                }else{
-
-
-                }
-            }
-
-
-        });
-        function testVip (){
-            layer.open({
-            content: `
-            <div>
-                <h5 style="color: #333;">本站高清免费，安装本站APP,畅享本站视频。</h5>
-                <div>
-                    <a style="display: inline-block;margin: 2px;" href="https://www.migu.tv/?channelCode=114" target="_blank" rel="nofollow noopener noreferrer">
-                        <div class="img-rounded image_1-1" style="height: 83px;width:191px; background-image: url('https://txjgk87n.com/static/image/ic_launcher.png');background-size: 100%;" alt="51漫画"></div>
-                        <h8 style="text-align: center;">91糖心Vlog</h8>
-                    </a>
-                </div>
-            </div>
-            `,
-            shadow:false,
-            btn: ['立即安装', '稍后'],
-            shadeClose: false,
-            yes: function(){
-                window.open('https://txjgk87n.com/?_c=offr1tx')
-            }, no: function(){
-    
-            }
-        });
-        }
-        function isMobile(){
-            var info = navigator.userAgent;
-            var agents = ["Android", "iPhone", "SymbianOS", "Windows Phone", "iPod", "iPad"];
-            for(var i = 0; i < agents.length; i++){
-                if(info.indexOf(agents[i]) >= 0) return true;
-            }
-            return false;
-        }
-        function getCurrDate() {
-            var date = new Date();
-            var sep = "-";
-            var year = date.getFullYear(); //获取完整的年份(4位)
-            var month = date.getMonth() + 1; //获取当前月份(0-11,0代表1月)
-            var day = date.getDate(); //获取当前日
-            if (month <= 9) {
-                month = "0" + month;
-            }
-            if (day <= 9) {
-                day = "0" + day;
-            }
-            var currentdate = year + sep + month + sep + day;
-            return currentdate;
-        }
-        function vaid(e){
-            $.ajax({
-                type : "post",
-                url : 'https://serve.porncvd.com/poweredby-tpl',
-                data:{id:$('.js-code').val(),m:isMobile()},
-                success : function(tpl) {
-                    $('.playerbox').slideUp(1500).after(tpl)
-                    if(!isMobile()){
-                        $('.js-after').remove()
-                    }
-                }
-            });
-        }
     </script>
-<ins id="1024571" data-width="308" data-height="298"></ins>
-<script type="text/javascript" data-cfasync="false" async>(adsbyjuicy = window.adsbyjuicy || []).push({'adzone':1024571});</script>
-<!--JuicyAds END-->   
 </div>
 
 <%- include include/boot-footer.html%>
