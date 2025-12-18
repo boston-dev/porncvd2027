@@ -261,16 +261,8 @@ exports.resourcePost = asyncHandler(async (req, res) => {
     return res.status(400).json({ ok: false, msg: 'id 和 site 必填' });
   }
 
-  // 只允许更新的字段（白名单），避免别人塞奇怪字段进库
-  const allow = [
-    'title', 'title_en', 'keywords', 'keywords_en', 'desc', 'desc_en',
-    'img', 'url', 'site', 'tag', 'cat', 'date', 'path', 'vipView', 'source', 'id'
-  ];
-
-  const $set = {};
-  for (const k of allow) {
-    if (obj[k] !== undefined) $set[k] = obj[k];
-  }
+ 
+  const $set =obj;
 
   // upsert：有就更新，没有就创建
   const doc = await Jav.findOneAndUpdate(
