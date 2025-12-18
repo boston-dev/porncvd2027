@@ -2,4 +2,5 @@
 .video-list .video-list-image{
     margin: 0 auto;
     display: block;
+    object-fit:cover;
 }
