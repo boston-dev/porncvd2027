@@ -8,7 +8,7 @@
  */
 
 const mongoose = require("mongoose");
-
+const { Types } = require("mongoose");
 // 你的模型路径按实际改
 const Jav = require("./models/Jav");
 
@@ -18,6 +18,8 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/downM3u8";
 const urls = [
   "https://porncvd.com/javs/6943aeca0a2465cf16541775.html",
   "https://porncvd.com/javs/6943aebc0a2465cf1654165f.html",
+  "https://porncvd.com/javs/6943b2e30a2465cf16545abf.html",
+  "https://porncvd.com/javs/6943b2c30a2465cf1654585b.html"
 ];
 
 // 从 URL 里提取 /javs/<id>.html 的 <id>
@@ -45,7 +47,9 @@ async function main() {
   // 你库里如果是 id 字段存业务 id，就删 id
   // 如果是 _id（ObjectId）当路由 id，用 _id 删
   // 这里先按你 schema 里有 id:{type:String} 的习惯删
-  const res = await Jav.deleteMany({ id: { $in: ids } });
+  const objectIds = ids.map(x => new Types.ObjectId(x));
+  console.log(objectIds)
+  const res = await Jav.deleteMany({ _id: { $in: objectIds } });
 
   console.log("Delete result:", res);
   await mongoose.disconnect();
