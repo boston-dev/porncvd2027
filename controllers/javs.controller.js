@@ -194,6 +194,7 @@ exports.detail = [
       actor: 1,
       type: 1,
       link:1,
+      content:1,
     }).lean();
 
     if (!video || video.disable === 1) {
@@ -210,6 +211,15 @@ exports.detail = [
     };
     if (video.site === 'hanime') relateDoc.site = { $eq: 'hanime' };
     else relateDoc.site = { $ne: 'hanime' };
+     const regex = /<img([^>]+?)src="([^"]+)"([^>]*)>/gi;
+
+    video.content = video.content.replace(regex, (match, before, src, after) => {
+      // 已经是完整 URL 的不处理
+      if (/^https?:\/\//i.test(src)) return match;
+
+      return `<img${before}src="${video.source}${src}"${after}>`;
+    });
+    video.content = video.content.replace(/<img\b[^>]*>(?![\s\S]*<img\b)/i, '');
 
     const docs = await Jav.find(relateDoc)
       .sort({ date: -1 })

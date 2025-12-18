@@ -4,3 +4,41 @@
     display: block;
     object-fit:cover;
 }
+.post-tools{
+
+  padding: 10px 0;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+ 
+}
+
+.post-tools .js-toggle-all{
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  border: 1px solid rgba(0,0,0,.10);
+}
+
+.post-body{
+  position: relative;
+   color: #b8babc;
+}
+
+/* 折叠：限制高度（你可改 900px） */
+.post-body.is-collapsed{
+  max-height:200px;
+  overflow: hidden;
+}
+
+/* 折叠时底部渐隐 */
+.post-body.is-collapsed::after{
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 140px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+  pointer-events: none;
+}

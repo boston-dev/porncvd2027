@@ -7,6 +7,7 @@ const javsSchema = new mongoose.Schema({
   title:{type:String,default:''},
   title_en:{type:String,default:''},
   keywords:{type:String,default:''},
+  content:{type:String,default:''},
   keywords_en:{type:String,default:''},
   desc:{type:String,default:''},
   desc_en:{type:String,default:''},
@@ -27,6 +28,7 @@ const javsSchema = new mongoose.Schema({
   disable:{type:Number,default:0},
   source:{type:String,default:''},
   actor:{type:Array,default:[]},
+  imgs:{type:Array,default:[]},
 });
 javsSchema.index({ path: -1 });
 javsSchema.index({ title: -1 });

@@ -115,11 +115,21 @@
             background: rgb(114, 50, 221);
             border-color: rgb(114, 50, 221);">直播中，點擊下載APP觀看</button>
         </div> -->
-        <div style="color: #b8babc;" class="min-mx--30 px-1 videotitle">
-            <p><%=video[`desc${tplLang}`] || video[`desc`]%></p>
+
+
+        <div class="post" id="post">
+        
+
+            <div class="post-body is-collapsed" id="postBody">
+                <p><%=video[`desc${tplLang}`] || video[`desc`]%></p>
+                <div>
+                    <%-video[`content`]%>
+                </div>  
+            </div>
+            <div class="post-tools " style="display: flex;justify-content: center;">
+            <a href="javascript:;" class="js-toggle-all">展开全部</a>
         </div>
-
-
+        </div>
 
 
         <div class="m-movies js-m-movies clearfix">
@@ -144,7 +154,25 @@
     </div>
     
     <input type="hidden" data-type="<%-video.site%>" id="video-in" data-text="<%=tplLang ? 'The order number is a vip certificate, please copy and keep it, remember' : '訂單號為vip憑證，請複制保持，切記' %>" value="<%= JSON.stringify(video.link) %>">
-    <script>
+   <script>
+$(function () {
+  var $body = $("#postBody");
+  var $btn  = $(".js-toggle-all");
+
+  $btn.on("click", function () {
+    var collapsed = $body.hasClass("is-collapsed");
+    $body.toggleClass("is-collapsed", !collapsed);
+    $btn.text(collapsed ? "收起内容" : "展开全部");
+
+    // 展开后把视图拉到按钮下方，体验更顺
+    if (collapsed) {
+      $("html,body").animate({ scrollTop: $("#post").offset().top }, 200);
+    }
+  });
+});
+</script>
+   <script>
+        
         var source="<%= video.source %>"
         var urlJSon=JSON.parse(document.querySelector('#video-in').value)
         urlJSon.forEach(function (item) {
