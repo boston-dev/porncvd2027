@@ -1,5 +1,4 @@
 'use strict';
-
 const asyncHandler = require('../utils/asyncHandler');
 const { buildListMeta} = require('../utils/buildMeta');
 const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
