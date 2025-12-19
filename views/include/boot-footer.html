@@ -1,136 +1,24 @@
-
-</section>
-</div>
-</div>
-<footer class="footer" style="color: #fff">
-    <div class="container">
-        <div class="js-vserson hidden"></div>
-        <div class="text-center">
-            <!-- 友情链接 - -->
-            <%
-            for(var keys=0;keys<frends.length;keys++){
-            var item=frends[keys]
-            %>
-            <a target="_blank" href="<%=item.href%>"><%=item[`title${tplLang}`] || item[`title`]%></a> |
-            <%
-            }
-            %>
-        </div>
-        <div class="text-center">
-        <a href="/about" target="_blank" title="关于我们">eamil:</a>  armandolailah70591@gmail.com
-        <a href="/sitemap.xml" target="_blank" title="sitemap">sitemap</a><br>
-        <br>Copyright
-        <p class="text-center">©2024 </p>
-        </div>
-    </div>
+<footer class="py-3 border-top border-dark">
+  <div class="container-fluid px-3 small text-secondary d-flex flex-wrap justify-content-between gap-2">
+    <p class="text-xs mb-0">
+      PicGaze is a free gallery site for models &amp; cosplay photos.
+      <a href="/about.html">About</a> ·
+      <a href="/dmca.html">DMCA</a>
+    </p>
+  </div>
 </footer>
-<div class="js-dp-box"></div>
 
-<script>
-    var lazyload = new LazyLoad({
-        elements_selector: '.lazyload',
-        class_loading: 'lazy-loading',
-        class_loaded: 'lazy-loaded',
-        attr_to_webp: 'data-not-to-webp',
-        //parentLoadingClass: LOADING_PARENT_CLASS,
-        callback_error: function (el) {
-            // 背景图不存在不触发此回调
-            var src = el.getAttribute('data-src').replace(/\.webp/gi, '');
-            if (el.tagName === 'IMG') {
-                el.setAttribute('src', src);
-            }
-        }
-    });
-</script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   $(function () {
-    // 每个广告展示几次，再切到下一个
-    var repeatTimes = 2;
-
-    $.ajax({
-      url: 'https://v.viet123.tv/api/snippets', // { listTop: [...], listBtm: [...] }
-      type: 'GET',
-      dataType: 'json',
-      success: function (data) {
-        var listTop = data.listTop || [];
-        var listBtm = data.listBtm || [];
-        var listLeft = data.listLeft || [];
-        repeatTimes=data.repeatTimes || repeatTimes
-        // 顶部广告轮播
-        if (Array.isArray(listTop) && listTop.length) {
-          rotateAds({
-            list: listTop,
-            pos: 'top',                 // 标记位置
-            repeatTimes: repeatTimes
-          });
-        }
-
-        // 底部广告轮播
-        if (Array.isArray(listBtm) && listBtm.length) {
-          rotateAds({
-            list: listBtm,
-            pos: 'btm',
-            repeatTimes: repeatTimes
-          });
-        }
-        // 左侧
-        if (Array.isArray(listLeft) && listLeft.length) {
-          rotateAds({
-            list: listLeft,
-            pos: 'left',
-            repeatTimes: repeatTimes
-          });
-        }
-      },
-      error: function (xhr) {
-        console.error('加载广告列表失败', xhr);
-      }
+    $(".btn-follow").on("click", function (e) {
+      e.preventDefault();
+      const $b = $(this);
+      if ($b.hasClass("btn-success")) return;
+      $b.removeClass("btn-primary").addClass("btn-success").text("Following");
     });
-
-    // 封装一个轮播函数，pos = 'top' / 'btm'
-    function rotateAds (options) {
-      var list        = options.list;
-      var pos         = options.pos;           // 'top' or 'btm'
-      var repeatTimes = options.repeatTimes;
-
-      // 每个位置自己的 key，全站统一
-      var keyIndex = 'snippet_index_' + pos;
-      var keyShown = 'snippet_shown_' + pos;
-
-      var idx   = parseInt(localStorage.getItem(keyIndex), 10);
-      var shown = parseInt(localStorage.getItem(keyShown), 10);
-
-      if (isNaN(idx)   || idx   >= list.length) idx   = 0;
-      if (isNaN(shown) || shown < 0)            shown = 0;
-
-      var src = list[idx];
-
-      // 删掉之前这个位置的广告脚本
-      $('script[data-ad="' + pos + '"]').remove();
-
-      // 插入当前广告脚本
-      $('<script>', {
-        src: src,
-        async: true,
-        'data-ad': pos
-      }).appendTo('body');
-
-      // 页面访问次数 +1
-      shown += 1;
-
-      // 展示 repeatTimes 次后，切到下一个
-      if (shown >= repeatTimes) {
-        shown = 0;
-        idx = (idx + 1) % list.length;
-      }
-
-      // 写回 localStorage
-      localStorage.setItem(keyIndex, idx);
-      localStorage.setItem(keyShown, shown);
-    }
   });
-</script>				
-
-
+</script>
 </body>
 </html>

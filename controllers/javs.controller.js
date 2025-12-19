@@ -25,7 +25,7 @@ exports.home = asyncHandler(async (req, res) => {
     page,
     limit,
     sort: { date: -1 },
-    select: 'title title_en img url site tag cat date id path vipView  source',
+    select: 'title title_en img url site tag cat date id path vipView  source pics',
     lean: true,
     leanWithId: false,
   });

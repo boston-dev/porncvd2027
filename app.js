@@ -47,23 +47,19 @@ app.use(generalLimiter);
 /** Static (7d cache) */
 app.use(express.static(path.join(__dirname, 'public')));
 app.use( async (req,res,next) => {
+   res.locals.siteName = 'PicGaze'; 
+   res.locals.currentPath = req.path; 
   res.locals.gNav=gNav
   res.locals.frends=[]
     res.locals.curSite=''
    res.locals.tplLang=''
    res.locals.orders_id=''
    res.locals.genreNav=genreNav
-  res.locals.meta={
-    "title": "porncvd - 素人av/免費A片/流出/性愛自拍/素人/成人無碼/免費成人/台灣自拍",
-    "keywords": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",
-    "desc": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",
-    "title_zh": "porncvd - 素人av/免费A片/流出/性爱自拍/素人/成人无码/免费成人/台湾自拍",
-    "keywords_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",
-    "desc_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",
-    "title_en":'porncvd-Amateur AV/Free Porn/Outflow/Sex Selfie/Amateur/Uncensored Adult/Free Adult/Taiwan Selfie',
-    "keywords_en": 'Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source',
-    "desc_en": 'Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source',
-}
+    res.locals.meta={
+            "title": "PicGaze – Free Model Gallery, Cosplay Photos & OnlyFans Leaks",
+            "keywords": "model photos, cosplay gallery, onlyfans leaks, instagram models, tiktok girls, nsfw images, bikini models, hd pictures, picgaze",
+            "desc": "PicGaze is a free high-quality gallery of models, cosplay sets, Instagram and TikTok girls, updated daily. Browse HD photos, curated collections and trending OnlyFans leaks in a clean, mobile-friendly experience.",
+        }
    next();
 })
 /** Routes */
@@ -75,7 +71,7 @@ app.use(errorHandler);
 
 /** --- Mongo connect with backoff (avoid infinite crash-loop) --- */
 async function connectMongoWithRetry() {
-  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/downM3u8';
+  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/picsezo';
   const opts = {
     autoIndex: false,
     serverSelectionTimeoutMS: 8000,

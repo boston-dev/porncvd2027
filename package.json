@@ -5,8 +5,8 @@
   "description": "PornCVD stable production backend (Express + Mongoose)",
   "main": "app.js",
   "scripts": {
-    "start": "cross-env PORT=3025 SITE_NAME=PORNCVD SITE_URL=\"https://porncvd.com\" NODE_ENV=production node app.js",
-    "dev": "cross-env PORT=3025 SITE_NAME=PORNCVD SITE_URL=\"https://porncvd.com\" nodemon app.js"
+    "start": "cross-env PORT=3022 SITE_NAME=Picgaze SITE_URL=\"https://picgaze.com\" NODE_ENV=production node app.js",
+    "dev": "cross-env PORT=3022 SITE_NAME=Picgaze SITE_URL=\"https://picgaze.com\" nodemon app.js"
   },
   "dependencies": {
     "compression": "^1.7.4",
