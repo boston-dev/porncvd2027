@@ -8,24 +8,15 @@
     <link href="/style/css/app.css" rel="stylesheet">
     <link href="/style/css/home.css" rel="stylesheet">
     <link href="/style/css/video.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3.1/dist/lazyload.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/style/js/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/layer_mobile/js.cookie.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dplayer@1.26.0/dist/DPlayer.min.js"></script>
+    <script src="/style/js/lazyload.min.js"></script>
+    <script type="text/javascript" src="/style/js/jquery.min.js"></script>
+    <script src="/style/js/hls.min.js"></script>
+    <script src="/style/js/DPlayer.min.js"></script>
     <style>
         .header{
             position: static;
         }
     </style>
-    <script>
-        if(['ko-kr'].includes((navigator.language||navigator.userLanguage).toLowerCase())){
-            location.href='https://bvujarg.xyz'
-        }
-        if(location.href.indexOf('token') > -1){
-            localStorage.setItem('token', 'Tom');
-        }
-    </script>
 </head>    
 <body>
 <header class=" header d-flex flex-column align-items-center" >
@@ -74,7 +65,7 @@
         <form id="searchDesktopForm" class="search" action="/search/javs">
             <input class="search-txt" type="text" name="search_query" placeholder="search" value="">
             <input class="btn" type="submit" value="Search"
-                   style="background:url(&quot;https://cdn.jsdelivr.net/gh/boston-dev/status@1.0/se2.png&quot;) no-repeat center center #ec585e;text-indent: -99999px">
+                   style="background:url('/se2.png') no-repeat center center #ec585e;text-indent: -99999px">
         </form>
     </div>
     <div style="background-color: #1a1a1a;width: 100%">
