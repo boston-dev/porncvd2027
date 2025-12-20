@@ -82,7 +82,7 @@ ${items}
 exports.sitemapJavsShard = async (req, res) => {
   const site = getSiteUrl(req);
   const shard = Math.max(1, parseInt(req.params.shard || '1', 10));
-  const key = `smj:${site}:${shard}`;
+  const key = `smj:v2:${site}:${shard}`;
 
   const gz = await cached(key, SITEMAP_TTL_MS, async () => {
     const skip = (shard - 1) * SITEMAP_PAGE_SIZE;
