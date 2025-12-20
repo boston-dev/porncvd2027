@@ -185,13 +185,13 @@ exports.detail = [
       date:1,
       elseName:1,
       likes:1,
-      social:1
+      social:1,
+      id:1
     }).lean();
 
     if (!video || video.disable === 1) {
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
-    console.log(video.source,'--------------')    
         const pager = paginatePics(
             video.pics || [],
             page,
@@ -214,7 +214,8 @@ exports.detail = [
             date:1,
             elseName:1,
             likes:1,
-            social:1
+            social:1,
+            id:1
           } },
         ]);
         const seo = buildSeo(video, page, {

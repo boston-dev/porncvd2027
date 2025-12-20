@@ -96,7 +96,7 @@ exports.sitemapJavsShard = async (req, res) => {
 
     const urls = docs.map(d => {
       const lastmod = ymd(d.updatedAt || d.date);
-      return `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${lastmod}</lastmod></url>`;
+      return `<url><loc>${site}/girls/${d.id}.html</loc><lastmod>${lastmod}</lastmod></url>`;
     }).join('');
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
