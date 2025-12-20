@@ -30,7 +30,28 @@ exports.home = asyncHandler(async (req, res) => {
    }
   return res.render('boot', result);
 });
+exports.hot = asyncHandler(async (req, res) => {
+  // 首页：最新
+   const page = Math.max(1, parseInt(req.query.page || '1', 10));
+  const limit = 40;
+  const query = { disable: { $ne: 1 } };
 
+  const result = await Jav.paginate(query, {
+    page,
+    limit,
+    sort: {likes: -1 },
+    select: 'title title_en img url site tag cat date id path vipView  source pics',
+    lean: true,
+    leanWithId: false,
+  });
+  Object.assign(result,{
+    ...withPageRange(result,{prelink:'/?page=pageTpl'})
+  })
+  if(req.query.ajax){
+       return  res.send( result);
+   }
+  return res.render('boot', result);
+});
 exports.search = asyncHandler(async (req, res) => {
   const qRaw = (req.query.search_query || '').trim();
   const page = Math.max(1, parseInt(req.query.page || '1', 10));

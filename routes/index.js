@@ -9,6 +9,7 @@ router.get('/search/:search_query?/:p?', javs.search);
 router.get('/tag/:name/:p?', javs.tag);
 router.get('/cat/:name/:p?', javs.tag);
 router.get('/genre/:p?', javs.genre);
+router.get('/hot/:page?.html', javs.hot);
 // /models/692129b923e54159ce1c77dd.html
 router.get('/girls/:id/:page?', javs.detail);
 router.get('/models/:id/:page?.html', javs.models);
