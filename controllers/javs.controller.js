@@ -279,14 +279,15 @@ exports.resourcePost = asyncHandler(async (req, res) => {
 
 exports.resourceFind = asyncHandler(async (req, res) => {
   const obj = req.body || {};
+  console.log(obj,'-------')
   // upsert：有就更新，没有就创建
   const doc = await Jav.findOne(obj).lean();
   if(doc){
-   return {
+   return res.json({
     code:600,
     msg:'已经存在',
     data:doc
-   }
+   })
   }
   return res.json({ code: 200, data: doc });
 });
