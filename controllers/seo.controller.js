@@ -82,7 +82,7 @@ ${items}
 exports.sitemapJavsShard = async (req, res) => {
   const site = getSiteUrl(req);
   const shard = Math.max(1, parseInt(req.params.shard || '1', 10));
-  const key = `smj:v2:${site}:${shard}`;
+  const key = `smj:${site}:${shard}`;
 
   const gz = await cached(key, SITEMAP_TTL_MS, async () => {
     const skip = (shard - 1) * SITEMAP_PAGE_SIZE;
@@ -93,7 +93,6 @@ exports.sitemapJavsShard = async (req, res) => {
       .limit(SITEMAP_PAGE_SIZE)
       .select({ _id: 1, updatedAt: 1, date: 1,id:1 })
       .lean();
-
     const urls = docs.map(d => {
       const lastmod = ymd(d.updatedAt || d.date);
       return `<url><loc>${site}/girls/${d.id}</loc><lastmod>${lastmod}</lastmod></url>`;
