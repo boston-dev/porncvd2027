@@ -1,157 +1,239 @@
 <%- include include/boot-head.html%>
-<div class="container px-0">
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css"
+/>
 
-    <style>
-        .el-input__inner {
-            -webkit-appearance: none;
-            background-color: #fff;
-            background-image: none;
-            border-radius: 4px;
-            border: 1px solid #dcdfe6;
-            box-sizing: border-box;
-            color: #606266;
-            display: inline-block;
-            font-size: inherit;
-            height: 40px;
-            line-height: 40px;
-            outline: none;
-            padding: 0 15px;
-            transition: border-color .2s cubic-bezier(.645,.045,.355,1);
-            width: 100%;
-        }
-        .el-button {
-            display: inline-block;
-            line-height: 1;
-            white-space: nowrap;
-            cursor: pointer;
-            background: #fff;
-            border: 1px solid #dcdfe6;
-            color: #606266;
-            -webkit-appearance: none;
-            text-align: center;
-            box-sizing: border-box;
-            outline: none;
-            margin: 0;
-            transition: .1s;
-            font-weight: 500;
-            -moz-user-select: none;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            padding: 12px 20px;
-            font-size: 14px;
-            border-radius: 4px;
-            color: #fff;
-            background-color: #67c23a;
-            border-color: #67c23a;
-        }
-    </style>
-
-    <div class="my-2 px-1 videotitle">
-        <h4 class="vtitle min-mx--30 ">
-            <span><%=video[`title${tplLang}`]%></span></h4>
-    </div>
-    <div class="js-vserson hidden"></div>
-    <div class="hidden js-vaid-box">
-        <div style="display: flex;" >
-            <input type="text" autocomplete="off" placeholder="<%=tplLang ? 'Already a VIP? Please enter the order number to verify VIP': '已經是VIP?,請輸入訂單號驗證VIP'%>" class="el-input__inner js-code">
-            <button type="button" class="el-button el-button--success is-round js-check " ><!----><!----><span><%=tplLang ? 'Verify VIP': '驗證VIP'%> </span></button>
-        </div>
-    </div>
-    <div class="mgplaylist" style="position: relative">
-
-        <div class="playerbox <%if(!video.url){%> hidden <%}%>" id="playerbox">
-
-            <nav id="dplayer">
-
-            </nav>
-        </div>
-        <div >
-            <!--<h5>APP已上线，推荐APP</h5>-->
-            <!--<div>-->
-
- 
-            <!--    <a style="display: inline-block;margin: 2px;" href="https://www.migu.tv/?channelCode=114" target="_blank" rel="nofollow noopener noreferrer">-->
-            <!--        <div class="img-rounded image_1-1" style="height: 48px;width: 48px; background-image: url('https://txjgk87n.com/static/image/ic_launcher.png?_v=20211128');background-size: 100%;" alt="51漫画"></div>-->
-            <!--        <h8 style="text-align: center;">91糖心</h8>-->
-            <!--    </a>-->
-
-
-            <!--</div>-->
-        <!--</div>-->
-        <%
-        if(video.tag && video.tag){
-        %>
-        <div class="min-mx--30 px-1 my-1">
-            <%
-            for(let k=0;k<video.tag.length;k++){
-            %>
-            <a href="/tag/<%=video.tag[k]%>/<% if(curSite){%>?site=<%=curSite%><%}%>" class="btn my-1 btn-secondary btn-sm"><%=video.tag[k]%></a>
-
-            <%
-            }
-            %>
-        </div>
-        <%
-        }
-        %>
-        <div class="js-vserson hidden"></div>
-
-        <div style="color: #b8babc;" class="min-mx--30 px-1 videotitle">
-            <p><%=video[`desc${tplLang}`] || video[`desc`]%></p>
-        </div>
-
-
-
-
-        <div class="m-movies js-m-movies clearfix">
-            <h1 class="title min-mx--30 px-1">
-                <strong>
-                    <a href="javascript:;">
-                        Related video
-                    </a>
-                </strong>
+<style>
+    @media (max-width:575.98px){
+      .profile-card{flex-direction:column;align-items:flex-start;}
+    }
+  </style>
+</style>
+<main class="container-fluid px-3 py-3">
+  <section class="mb-3">
+    <div class="profile-card">
+      <div class="avatar-wrapper">
+        <img src="<%= video.source %><%=curPics[0]%>" alt="<%=video[`title${tplLang}`]%>" />
+      </div>
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between gap-2 flex-wrap">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-semibold mb-2" style="font-size: 16px;">
+              <%=video[`title${tplLang}`]%> Photos & Videos Gallery – PicGaze
             </h1>
-            <div class="js-vserson"></div>
-            <%
-            if(typeof docs != "undefined"){
+            <div class="small text-secondary">Also known as:<%=video[`elseName`]%></div>
+            
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary btn-sm btn-follow">Follow</button>
+            <button class="btn btn-outline-light btn-sm">Discuss</button>
+          </div>
+        </div>
+        <div class="mt-2 d-flex flex-wrap gap-1">
+              <%
+            for(var keys=0;keys<video.social?.length;keys++){
+            var item = video.social[keys];
             %>
-            <%- include include/boot-list.html%>
+          <a target="_blank" href="<%=item.href%>" class="btn btn-outline-secondary btn-sm"><%=item.text%></a>
             <%
             }
             %>
-
+        </div>
+        <div class="small text-secondary mt-2">
+          <span class="me-3"><%=total%> Media</span>
+          <span><%=video.likes%> Likes</span>
+        </div>
+      </div>
+    </div>
+  </section>
+   
+  <!-- <section class="mb-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 small text-secondary">
+      <div>
+        Sort:
+        <div class="btn-group btn-group-sm ms-1">
+          <button class="btn btn-outline-light active">Newest</button>
+          <button class="btn btn-outline-light">Most liked</button>
+        </div>
+      </div>
+      <div>
+        View:
+        <div class="btn-group btn-group-sm ms-1">
+          <button class="btn btn-outline-light active">Grid</button>
+          <button class="btn btn-outline-light">List</button>
+        </div>
+      </div>
+    </div>
+  </section> -->
+  <section>
+      <nav >
+       <%
+        if(typeof range != "undefined"){
+        %>
+        <div class="d-flex align-items-center justify-content-center">
+            <ul class="pagination">
+                <%
+                for(let k=0;k<range.length;k++){
+                %>
+                <li class="page-item  <%=range[k].class%>">
+                    <%
+                    if(range[k].href){
+                    %>
+                    <a class="page-link" href="<%=range[k].href%>"><%=range[k].text ||  range[k].title%></a>
+                    <%
+                    }else{
+                    %>
+                    <a class="page-link" href="javascript:;"><%=range[k].text ||  range[k].title%></a>
+                    <%
+                    }
+                    %>
+                </li>
+                <%
+                }
+                %>
+            </ul>
         </div>
 
-    </div>
-    
-    <input type="hidden" data-type="<%-video.site%>" id="video-in" data-text="<%=tplLang ? 'The order number is a vip certificate, please copy and keep it, remember' : '訂單號為vip憑證，請複制保持，切記' %>" value="<%= video.url %>">
-    <script>
-        var url=document.querySelector('#video-in').value
-        url= url.indexOf('http') == -1 ? "<%= video.source %>"+url : url
-        var img="<%= video.img %>"
-        img=img.indexOf('http') == -1 ? "<%= video.source %>"+img : img
-        var types= $('#video-in').attr('data-type')
-        var time=0
-        var dp = new DPlayer({
-            container: document.getElementById('dplayer'),
-            autoplay: false,
-            theme: '#FADFA3',
-            loop: true,
-            lang: 'zh-cn',
-            screenshot: true,
-            hotkey: true,
-            preload: 'auto',
-            /*logo: '/favicon.ico',*/
-            volume: 0.7,
-            mutex: true,
-            video: {
-                url:url,
-                pic:img,
-                thumbnails:img,
-                type: 'auto',
-            },
-        });
-    </script>
-</div>
+        <%
+        }
+        %>
+    </nav>
+    <div class="row g-2 g-sm-3">
+       <%
+        for(var keys=0;keys<curPics.length;keys++){
+        var item = curPics[keys];
+        %> 
+      <div class="col-6 col-md-4 col-lg-3">
+        <article class="media-card h-100">
+          <a 
+           href="<%= video.source %><%=item%>"
+          data-lightbox="set-<%= video._id %>"       
+          data-title="<%= video.title %>"           
+           class="text-light">
+            <div class="media-thumb">
+              <img src="<%= video.source %><%=item%>" alt="Media" />
+            </div>
+          </a>
+        </article>
+      </div>
+      <%
+        }
+        %>
 
+    </div>
+
+    <nav class="mt-4">
+       <%
+        if(typeof range != "undefined"){
+        %>
+        <div class="d-flex align-items-center justify-content-center">
+            <ul class="pagination">
+                <%
+                for(let k=0;k<range.length;k++){
+                %>
+                <li class="page-item  <%=range[k].class%>">
+                    <%
+                    if(range[k].href){
+                    %>
+                    <a class="page-link" href="<%=range[k].href%>"><%=range[k].text ||  range[k].title%></a>
+                    <%
+                    }else{
+                    %>
+                    <a class="page-link" href="javascript:;"><%=range[k].text ||  range[k].title%></a>
+                    <%
+                    }
+                    %>
+                </li>
+                <%
+                }
+                %>
+            </ul>
+        </div>
+
+        <%
+        }
+        %>
+    </nav>
+  </section>
+  <!-- 相关推荐模特：内链核心 -->
+  <section id="related" class="mb-8" style="padding-bottom: 16px;">
+    <h2 class="text-xl font-semibold mb-3">
+      Similar models you may like
+    </h2>
+        <div class="row g-2 g-sm-3">
+        <%
+        for(var keys=0;keys<similar.length;keys++){
+        var item = similar[keys];
+        %>
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+          <article class="model-card h-100">
+             <a href="<%= item.href ? item.href : '/girls/'+item.id%>" class="text-light">
+              <div class="model-thumb">
+                
+                <img class="img-fluid rounded lazyload video-list-image  "
+                            src="<%= item.source %><%=item.pics[0]%>"
+                            title="<%=item[`title${tplLang}`] || item[`title`]%>"
+                            alt="<%=item[`title${tplLang}`] || item[`title`]%>"
+                            />
+              </div>
+              <div class="model-body">
+                <div class="fw-semibold text-truncate"><%=item[`title${tplLang}`] || item[`title`]%></div>
+                <div class="small text-secondary d-flex justify-content-between">
+                  <span>Post <%=item[`pics`].length%></span>
+                  <button class="btn btn-primary btn-sm btn-follow">Follow</button>
+                </div>
+              </div>
+            </a>
+          </article>
+        </div>
+        <%
+        }
+        %>
+      </div>
+  </section>
+   <!-- 模特简介：核心 SEO 文案 -->
+  <section id="about" class="mb-8">
+    <h2 class="text-xl font-semibold mb-2" style="font-size: 14px;">
+      About <%=video[`title${tplLang}`]%>
+    </h2>
+    <p class="text-sm leading-relaxed text-gray-200 mt-3" style="font-size: 12px;">
+      All galleries are collected from public sources and organized
+      for easier browsing. We regularly update <%=video[`title${tplLang}`]%>’s page
+      with new photosets, so you can follow their latest shoots,
+      social media posts and cosplay looks in one place.
+    </p>
+  
+
+  </section>
+
+ <!-- 安全说明 + 轻度长尾 -->
+  <section style="padding: 4px;" id="disclaimer" class="border-t border-gray-800 pt-4 mt-6 text-xs text-gray-500 leading-relaxed">
+     <p>
+      PicGaze indexes public model galleries and social media photos.
+      All images of <%=video[`title${tplLang}`]%> on this page are collected from publicly available sources.
+      If you are the owner or representative and would like content removed or updated,
+      please contact us via the DMCA page.
+    </p>
+    <p class="mt-2">
+      Browse more model photo and video galleries in the
+      <a href="/hot.html" class="underline">Hot</a> and
+      <a href="/" class="underline">New</a> sections.
+    </p>
+  </section>
+</main>
+
+<script type="application/ld+json">
+<%- seo.jsonLd %>
+</script>
 <%- include include/boot-footer.html%>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
+<script>
+  lightbox.option({
+    resizeDuration: 200,
+    fadeDuration: 200,
+    imageFadeDuration: 200,
+    wrapAround: true,       // 最后一张后继续回到第一张
+    alwaysShowNavOnTouchDevices: true
+  });
+</script>

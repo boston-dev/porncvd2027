@@ -1,19 +1,12 @@
 'use strict';
 const asyncHandler = require('../utils/asyncHandler');
-const { buildListMeta} = require('../utils/buildMeta');
+const { buildListMeta,paginatePics,buildSeo,escapeRegExp,buildPrelinkByUrl,escReg} = require('../utils/buildMeta');
 const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
 const renderFallback = require('../utils/renderFallback');
 
 const Jav = require('../models/Jav');
 
-/**
- * 线上一致：字段不改、集合不改、分页使用 mongoose-paginate-v2
- * 视图模板：继续用你线上 porncvd.com 的 ejs（home/search/tag/cat/nice/boot 等）
- */
 
-function escReg(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 exports.home = asyncHandler(async (req, res) => {
   // 首页：最新
@@ -74,21 +67,7 @@ exports.search = asyncHandler(async (req, res) => {
 });
 
 
-function escapeRegExp(str = '') {
-  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-function buildPrelinkByUrl(req, pageTpl = 'pageTpl') {
-  // 原始路径：/cat/台灣/2  或 /tag/自拍  或 /genre/2
-  const base = req.path.replace(/\/+$/, ''); // 去掉末尾 /
 
-  // 如果末尾是 /数字  => 替换成 /pageTpl
-  if (/\/\d+$/.test(base)) {
-    return base.replace(/\/\d+$/, `/${pageTpl}`);
-  }
-
-  // 如果末尾不是数字 => 直接追加 /pageTpl
-  return `${base}/${pageTpl}`;
-}
 exports.tag = asyncHandler(async (req, res) => {
   const site= decodeURIComponent((req.query.site || '').trim())
   const name = decodeURIComponent((req.params.name || '').trim());
@@ -163,93 +142,167 @@ exports.genre = asyncHandler(async (req, res) => {
 exports.detail = [
   detailLimiter,
   asyncHandler(async (req, res) => {
-    if (req.url.includes('/javs/realte.html')) return res.redirect('/');
 
     const raw = req.params.id || '';
-    const id = raw.replace(/\.html$/i, '');
+    const id = raw?.trim();
+    const page = req.params.page || 1;
     // ✅ fast ObjectId regex validation
-    if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
+    if (!id) {
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
       
-    const video = await Jav.findById(id).select({
-      url: 1,
+    let video = await Jav.findOne({id}).select({
+       url: 1,
       keywords: 1,
       desc: 1,
       title: 1,
       source: 1,
-      img: 1,
+      pics: 1,
+      Headers:1,
       tag: 1,
       site: 1,
-      disable: 1,
-      title_en: 1,
-      keywords_en: 1,
-      desc_en: 1,
-      cat: 1,
-      date: 1,
-      id: 1,
-      path: 1,
-      vipView: 1,
-      actor: 1,
-      type: 1,
+      date:1,
+      elseName:1,
+      likes:1,
+      social:1
     }).lean();
 
     if (!video || video.disable === 1) {
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
-    if(video.site == 'hanime'){
-            res.locals.curSite='hanime'
-     }
-   
-    const tags = Array.isArray(video.tag) ? video.tag.filter(Boolean) : [];
-    const relateDoc = {
-      _id: { $ne: video._id },
-      ...(tags.length ? { tag: { $in: tags } } : {}),
-    };
-    if (video.site === 'hanime') relateDoc.site = { $eq: 'hanime' };
-    else relateDoc.site = { $ne: 'hanime' };
+    console.log(video.source,'--------------')    
+        const pager = paginatePics(
+            video.pics || [],
+            page,
+            20,
+            `/girls/${req.params.id}/pageTpl`   // pageTpl 会被替换成页码
+        );
+        const similar = await Jav.aggregate([
+          { $match: { disable: { $ne: 1 }} },
+          { $sample: { size: 12 } },
+          { $project: {
+            url: 1,
+            keywords: 1,
+            desc: 1,
+            title: 1,
+            source: 1,
+            pics: 1,
+            Headers:1,
+            tag: 1,
+            site: 1,
+            date:1,
+            elseName:1,
+            likes:1,
+            social:1
+          } },
+        ]);
+        const seo = buildSeo(video, page, {
+            siteName: 'PicGaze',
+            origin:  video.source,                          
+            url:     req.protocol + '://' + req.get('host') + req.originalUrl
+        });
+        video={
+            ...pager,
+            seo,
+            similar,
+            ...video,
+        } 
+        res.locals.meta={
+            "title": seo.title,
+            "keywords": seo.keywords,
+            "desc": seo.description,
+        }
+        
+        if (req.query.ajax) {
+            return res.send(video);
+        }
+        res.render('nice',{
+          ...video,
+          video
+        } );
+  }),
+];
+exports.models = [
+  detailLimiter,
+  asyncHandler(async (req, res) => {
 
-    const docs = await Jav.find(relateDoc)
-      .sort({ date: -1 })
-      .limit(22)
-      .select({ title: 1, img: 1, site: 1, tag: 1, cat: 1, date: 1, id: 1, path: 1 ,source: 1,})
-      .lean();
-    const fentData={ video,docs}
-
-    const SITE = process.env.SITE_URL || 'https://porncvd.com';
-    const url = `${SITE}/javs/${video._id}.html`;
-    const title = video.title || 'Video';
-    const desc = (video.desc || title).slice(0, 160);
-    const m3u8 =`${video.source}${video.url}`
-    const img=`${video.source}${video.img}`
-   const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
-    res.locals.meta={
-      title: `${title} - ${process.env.SITE_NAME}`,
-      keywords: Array.isArray(video.tag) ? video.tag.join(',') : '',
-      desc,
-      canonical: url,
-
-      og: {
-        type: 'video.other',
-        title,
-        desc,
-        image: img
-      },
-
-      // ✅ VideoObject（SEO 核心）
-      jsonLd: {
-        "@context": "https://schema.org",
-        "@type": "VideoObject",
-        "name": title,
-        "description": desc,
-        "thumbnailUrl":img,
-        "uploadDate": uploadDate,
-        "embedUrl": url
-      }
+    const raw = req.params.id || '';
+    let id = raw?.trim();
+    const page = req.params.page || 1;
+    // ✅ fast ObjectId regex validation
+    if (!id) {
+      return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
-    if (req.query.ajax) return res.send(fentData);
+     id=id.replace(/\.html$/i, '')
+    let video = await Jav.findById(id).select({
+       url: 1,
+      keywords: 1,
+      desc: 1,
+      title: 1,
+      source: 1,
+      pics: 1,
+      Headers:1,
+      tag: 1,
+      site: 1,
+      date:1,
+      elseName:1,
+      likes:1,
+      social:1
+    }).lean();
 
-    return res.render('nice', fentData);
+    if (!video || video.disable === 1) {
+      return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
+    }
+    console.log(video.source,'--------------')    
+        const pager = paginatePics(
+            video.pics || [],
+            page,
+            20,
+            `/girls/${req.params.id}/pageTpl.html`   // pageTpl 会被替换成页码
+        );
+        const similar = await Jav.aggregate([
+          { $match: { disable: { $ne: 1 }} },
+          { $sample: { size: 12 } },
+          { $project: {
+            url: 1,
+            keywords: 1,
+            desc: 1,
+            title: 1,
+            source: 1,
+            pics: 1,
+            Headers:1,
+            tag: 1,
+            site: 1,
+            date:1,
+            elseName:1,
+            likes:1,
+            social:1
+          } },
+        ]);
+        const seo = buildSeo(video, page, {
+            siteName: 'PicGaze',
+            origin:  video.source,                          
+            url:     req.protocol + '://' + req.get('host') + req.originalUrl
+        });
+        video={
+            ...pager,
+            seo,
+            similar,
+            ...video,
+        } 
+        res.locals.meta={
+            "title": seo.title,
+            "keywords": seo.keywords,
+            "desc": seo.description,
+        }
+        
+        if (req.query.ajax) {
+            return res.send(video);
+        }
+        res.render('nice',{
+          ...video,
+          video
+        } );
   }),
 ];
 exports.resourcePost = asyncHandler(async (req, res) => {
@@ -279,7 +332,7 @@ exports.resourcePost = asyncHandler(async (req, res) => {
 
 exports.resourceFind = asyncHandler(async (req, res) => {
   const obj = req.body || {};
-  console.log(obj,'-------')
+
   // upsert：有就更新，没有就创建
   const doc = await Jav.findOne(obj).lean();
   if(doc){

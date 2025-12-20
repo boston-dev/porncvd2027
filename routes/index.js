@@ -9,9 +9,9 @@ router.get('/search/:search_query?/:p?', javs.search);
 router.get('/tag/:name/:p?', javs.tag);
 router.get('/cat/:name/:p?', javs.tag);
 router.get('/genre/:p?', javs.genre);
-// Detail routes (with validation inside controller)
-router.get('/javs/:id.html', javs.detail);
-
+// /models/692129b923e54159ce1c77dd.html
+router.get('/girls/:id/:page?', javs.detail);
+router.get('/models/:id/:page?.html', javs.models);
 router.post('/users/resource', javs.resourcePost);
 router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);
