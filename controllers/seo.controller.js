@@ -61,7 +61,7 @@ exports.sitemapIndex = async (req, res) => {
 
     let items = '';
     for (let i = 1; i <= pages; i++) {
-      items += `<sitemap><loc>${site}/sitemap-javs-${i}.xml.gz</loc><lastmod>${now}</lastmod></sitemap>`;
+      items += `<sitemap><loc>${site}/sitemap-girls-${i}.xml.gz</loc><lastmod>${now}</lastmod></sitemap>`;
     }
     items += `<sitemap><loc>${site}/sitemap-tag.xml.gz</loc><lastmod>${now}</lastmod></sitemap>`;
     items += `<sitemap><loc>${site}/sitemap-cat.xml.gz</loc><lastmod>${now}</lastmod></sitemap>`;
@@ -96,7 +96,7 @@ exports.sitemapJavsShard = async (req, res) => {
 
     const urls = docs.map(d => {
       const lastmod = ymd(d.updatedAt || d.date);
-      return `<url><loc>${site}/girls/${d.id}.html</loc><lastmod>${lastmod}</lastmod></url>`;
+      return `<url><loc>${site}/girls/${d.id}</loc><lastmod>${lastmod}</lastmod></url>`;
     }).join('');
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
