@@ -18,7 +18,7 @@ router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);
 
 router.get('/sitemap.xml', seo.sitemapIndex);           // 让它变成 index
-router.get('/sitemap-javs-:shard.xml.gz', seo.sitemapJavsShard);
+router.get('/sitemap-girls-:shard.xml.gz', seo.sitemapJavsShard);
 router.get('/sitemap-tag.xml.gz', seo.sitemapTag);
 router.get('/sitemap-cat.xml.gz', seo.sitemapCat);
 router.get('/robots.txt', seo.robots);                 // 你现在写 /robots.txt 更标准
