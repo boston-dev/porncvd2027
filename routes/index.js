@@ -20,17 +20,20 @@ router.post('/users/isHave', javs.resourceFind);
 // robots
 router.get('/robots.txt', seo.robots);
 
-// sitemap index：支持 xml / xml.gz
-router.get(['/sitemap.xml', '/sitemap.xml.gz'], seo.sitemapIndex);
+// sitemap index（两种都给）
+router.get('/sitemap.xml', seo.sitemapIndex);
+router.get('/sitemap.xml.gz', seo.sitemapIndex);
 
-// jav shards：支持 xml / xml.gz（强烈建议加正则，只允许数字）
-router.get(
-  ['/sitemap-javs-:shard(\\d+)\\.xml', '/sitemap-javs-:shard(\\d+)\\.xml\\.gz'],
-  seo.sitemapJavsShard
-);
+// javs shard（两种都给，注意正则保证 shard 是数字）
+router.get('/sitemap-javs-:shard(\\d+)\\.xml', seo.sitemapJavsShard);
+router.get('/sitemap-javs-:shard(\\d+)\\.xml\\.gz', seo.sitemapJavsShard);
 
-// tag/cat：支持 xml / xml.gz
-router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTag);
-router.get(['/sitemap-cat.xml', '/sitemap-cat.xml.gz'], seo.sitemapCat);
+// tag/cat（两种都给）
+router.get('/sitemap-tag.xml', seo.sitemapTag);
+router.get('/sitemap-tag.xml.gz', seo.sitemapTag);
+
+router.get('/sitemap-cat.xml', seo.sitemapCat);
+router.get('/sitemap-cat.xml.gz', seo.sitemapCat);
+
 
 module.exports = router;
