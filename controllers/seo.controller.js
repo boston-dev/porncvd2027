@@ -221,7 +221,7 @@ exports.sitemapCat = async (req, res) => {
         if (!name) return null;
         return {
           text: name,
-          href: `/cat/${encodeURIComponent(name)}`,
+          href: `/cat/${encodeURIComponent(name)}/`,
         };
       }
 
@@ -235,7 +235,7 @@ exports.sitemapCat = async (req, res) => {
         if (!href && text) {
           return {
             text,
-            href: `/cat/${encodeURIComponent(text)}`,
+            href: `/cat/${encodeURIComponent(text)}/`,
           };
         }
 
