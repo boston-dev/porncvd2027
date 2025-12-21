@@ -1,5 +1,23 @@
+/**
+ * seo.controller.js (fixed)
+ * 目标：让 Google Search Console 能稳定抓取 sitemap（包含 .xml 与 .xml.gz 两种格式）
+ *
+ * 关键修复：
+ * 1) 不再给 sitemap 响应加 X-Robots-Tag: noindex（原文件会加，可能引起抓取/解析异常）
+ * 2) 同时支持 /sitemap*.xml 以及 /sitemap*.xml.gz（你可以改 index 里用 .xml，老的 .gz 也兼容）
+ * 3) 更严格的分片参数校验，避免 params 被路由吞掉导致 shard 解析异常
+ * 4) 响应头更标准：Vary: Accept-Encoding，Content-Type 保持 XML
+ *
+ * 路由建议（Express）：
+ *   router.get('/robots.txt', seo.robots);
+ *   router.get(['/sitemap.xml', '/sitemap.xml.gz'], seo.sitemapIndex);
+ *   router.get(['/sitemap-javs-:shard(\\d+)\\.xml', '/sitemap-javs-:shard(\\d+)\\.xml\\.gz'], seo.sitemapJavsShard);
+ *   router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTag);
+ *   router.get(['/sitemap-cat.xml', '/sitemap-cat.xml.gz'], seo.sitemapCat);
+ */
+
 const zlib = require('zlib');
-const Jav = require('../models/Jav'); // TODO 改成你真实路径
+const Jav = require('../models/Jav'); // TODO：改成你真实路径
 
 const SITEMAP_PAGE_SIZE = Number(process.env.SITEMAP_PAGE_SIZE || 20000);
 const SITEMAP_TTL_MS = Number(process.env.SITEMAP_TTL_MS || 10 * 60 * 1000);
@@ -17,25 +35,52 @@ async function cached(key, ttl, fn) {
 function getSiteUrl(req) {
   const fixed = process.env.SITE_URL;
   if (fixed) return fixed.replace(/\/+$/, '');
-  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
-  const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+
+  const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https')
+    .split(',')[0]
+    .trim();
+
+  const host = (req.headers['x-forwarded-host'] || req.headers.host || '')
+    .split(',')[0]
+    .trim();
+
   return `${proto}://${host}`.replace(/\/+$/, '');
 }
 
 function ymd(d) {
   const dt = d ? new Date(d) : new Date();
-  return isNaN(dt.getTime()) ? new Date().toISOString().slice(0,10) : dt.toISOString().slice(0,10);
+  return isNaN(dt.getTime()) ? new Date().toISOString().slice(0, 10) : dt.toISOString().slice(0, 10);
 }
 
-function gzip(xml) {
+function gzipBuf(xml) {
   return zlib.gzipSync(Buffer.from(xml), { level: 6 });
 }
 
-function setXmlGz(res) {
-  res.type('application/xml; charset=utf-8');
-  res.set('Content-Encoding', 'gzip');
+function wantsGzip(req) {
+  // 1) 明确走 .gz 结尾
+  if ((req.path || '').toLowerCase().endsWith('.gz')) return true;
+  // 2) 也可以用 ?gz=1 强制
+  if (String(req.query.gz || '') === '1') return true;
+  return false;
+}
+
+function setXmlHeaders(res, isGz) {
+  // sitemap 本质是 XML
+  res.set('Content-Type', 'application/xml; charset=utf-8');
   res.set('Cache-Control', 'public, max-age=600, s-maxage=600');
-  res.set('X-Robots-Tag', 'noindex');
+  res.set('Vary', 'Accept-Encoding');
+
+  if (isGz) {
+    res.set('Content-Encoding', 'gzip');
+  } else {
+    res.removeHeader('Content-Encoding');
+  }
+}
+
+function sendXml(res, xml, isGz) {
+  setXmlHeaders(res, isGz);
+  if (isGz) return res.send(gzipBuf(xml));
+  return res.send(xml);
 }
 
 // robots.txt
@@ -49,42 +94,54 @@ Sitemap: ${site}/sitemap.xml
 `);
 };
 
-// ✅ sitemap index (挂在 /sitemap.xml)
+// ✅ sitemap index：同时支持 /sitemap.xml 与 /sitemap.xml.gz（由请求决定是否 gzip）
 exports.sitemapIndex = async (req, res) => {
   const site = getSiteUrl(req);
   const key = `smi:${site}`;
+  const isGz = wantsGzip(req);
 
-  const gz = await cached(key, SITEMAP_TTL_MS, async () => {
+  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
     const total = await Jav.countDocuments({ disable: { $ne: 1 } });
     const pages = Math.max(1, Math.ceil(total / SITEMAP_PAGE_SIZE));
     const now = new Date().toISOString();
 
+    // ✅ 建议在 index 里用 .xml（最稳），但 .xml.gz 也兼容（Google 支持）
+    const shardLoc = (i) => `${site}/sitemap-javs-${i}.xml`;
+    const tagLoc = `${site}/sitemap-tag.xml`;
+    const catLoc = `${site}/sitemap-cat.xml`;
+
     let items = '';
     for (let i = 1; i <= pages; i++) {
-      items += `<sitemap><loc>${site}/sitemap-javs-${i}.xml.gz</loc><lastmod>${now}</lastmod></sitemap>`;
+      items += `<sitemap><loc>${shardLoc(i)}</loc><lastmod>${now}</lastmod></sitemap>`;
     }
-    items += `<sitemap><loc>${site}/sitemap-tag.xml.gz</loc><lastmod>${now}</lastmod></sitemap>`;
-    items += `<sitemap><loc>${site}/sitemap-cat.xml.gz</loc><lastmod>${now}</lastmod></sitemap>`;
+    items += `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
+    items += `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${items}
 </sitemapindex>`;
-
-    return gzip(xml);
   });
 
-  setXmlGz(res);
-  res.send(gz);
+  return sendXml(res, xml, isGz);
 };
 
-// ✅ javs 分片（/sitemap-javs-1.xml.gz）
+// ✅ javs 分片：/sitemap-javs-1.xml 或 /sitemap-javs-1.xml.gz
 exports.sitemapJavsShard = async (req, res) => {
   const site = getSiteUrl(req);
-  const shard = Math.max(1, parseInt(req.params.shard || '1', 10));
+  const isGz = wantsGzip(req);
+
+  // 强制数字分片（路由没加正则时也能兜底）
+  const shardRaw = String(req.params.shard || '1');
+  const shard = Math.max(1, parseInt(shardRaw.replace(/\D+/g, '') || '1', 10));
+
   const key = `smj:${site}:${shard}`;
 
-  const gz = await cached(key, SITEMAP_TTL_MS, async () => {
+  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
+    const total = await Jav.countDocuments({ disable: { $ne: 1 } });
+    const pages = Math.max(1, Math.ceil(total / SITEMAP_PAGE_SIZE));
+    if (shard > pages) return null;
+
     const skip = (shard - 1) * SITEMAP_PAGE_SIZE;
 
     const docs = await Jav.find({ disable: { $ne: 1 } })
@@ -94,91 +151,91 @@ exports.sitemapJavsShard = async (req, res) => {
       .select({ _id: 1, updatedAt: 1, date: 1 })
       .lean();
 
-    const urls = docs.map(d => {
-      const lastmod = ymd(d.updatedAt || d.date);
-      return `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${lastmod}</lastmod></url>`;
-    }).join('');
+    const urls = docs
+      .map((d) => {
+        const lastmod = ymd(d.updatedAt || d.date);
+        return `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${lastmod}</lastmod></url>`;
+      })
+      .join('');
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
-
-    return gzip(xml);
   });
 
-  setXmlGz(res);
-  res.send(gz);
+  if (!xml) return res.status(404).send('not found');
+  return sendXml(res, xml, isGz);
 };
 
-// ✅ tag sitemap（只收录有内容的 tag）
+// ✅ tag sitemap：/sitemap-tag.xml 或 /sitemap-tag.xml.gz
 exports.sitemapTag = async (req, res) => {
   const site = getSiteUrl(req);
+  const isGz = wantsGzip(req);
   const key = `smt:${site}`;
 
-  const gz = await cached(key, SITEMAP_TTL_MS, async () => {
+  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
     const agg = await Jav.aggregate([
       { $match: { disable: { $ne: 1 }, tag: { $exists: true, $ne: null } } },
-      { $project: { tag: 1, u: { $ifNull: ["$updatedAt", "$date"] } } },
-      { $project: { tags: { $cond: [{ $isArray: "$tag" }, "$tag", ["$tag"]] }, u: 1 } },
-      { $unwind: "$tags" },
-      { $match: { tags: { $type: "string", $ne: "" } } },
-      { $group: { _id: "$tags", last: { $max: "$u" }, cnt: { $sum: 1 } } },
+      { $project: { tag: 1, u: { $ifNull: ['$updatedAt', '$date'] } } },
+      { $project: { tags: { $cond: [{ $isArray: '$tag' }, '$tag', ['$tag']] }, u: 1 } },
+      { $unwind: '$tags' },
+      { $match: { tags: { $type: 'string', $ne: '' } } },
+      { $group: { _id: '$tags', last: { $max: '$u' }, cnt: { $sum: 1 } } },
       { $match: { cnt: { $gte: 1 } } },
       { $sort: { last: -1 } },
-      { $limit: 50000 }
+      { $limit: 50000 },
     ]);
 
-    const urls = agg.map(t => {
-      const name = encodeURIComponent(String(t._id));
-      return `<url><loc>${site}/tag/${name}/</loc><lastmod>${ymd(t.last)}</lastmod></url>`;
-    }).join('');
+    const urls = agg
+      .map((t) => {
+        const name = encodeURIComponent(String(t._id));
+        return `<url><loc>${site}/tag/${name}/</loc><lastmod>${ymd(t.last)}</lastmod></url>`;
+      })
+      .join('');
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
-
-    return gzip(xml);
   });
 
-  setXmlGz(res);
-  res.send(gz);
+  return sendXml(res, xml, isGz);
 };
 
-// ✅ cat sitemap（你的分类字段如果叫 cat，就不用改；如果叫 category，自行改字段）
+// ✅ cat sitemap：/sitemap-cat.xml 或 /sitemap-cat.xml.gz
 exports.sitemapCat = async (req, res) => {
   const site = getSiteUrl(req);
+  const isGz = wantsGzip(req);
   const key = `smc:${site}`;
 
   const catField = process.env.CAT_FIELD || 'cat';
 
-  const gz = await cached(key, SITEMAP_TTL_MS, async () => {
+  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
     const agg = await Jav.aggregate([
       { $match: { disable: { $ne: 1 }, [catField]: { $exists: true, $ne: null } } },
-      { $project: { c: `$${catField}`, u: { $ifNull: ["$updatedAt", "$date"] } } },
-      { $project: { cats: { $cond: [{ $isArray: "$c" }, "$c", ["$c"]] }, u: 1 } },
-      { $unwind: "$cats" },
-      { $match: { cats: { $type: "string", $ne: "" } } },
-      { $group: { _id: "$cats", last: { $max: "$u" }, cnt: { $sum: 1 } } },
+      { $project: { c: `$${catField}`, u: { $ifNull: ['$updatedAt', '$date'] } } },
+      { $project: { cats: { $cond: [{ $isArray: '$c' }, '$c', ['$c']] }, u: 1 } },
+      { $unwind: '$cats' },
+      { $match: { cats: { $type: 'string', $ne: '' } } },
+      { $group: { _id: '$cats', last: { $max: '$u' }, cnt: { $sum: 1 } } },
       { $match: { cnt: { $gte: 1 } } },
       { $sort: { last: -1 } },
-      { $limit: 50000 }
+      { $limit: 50000 },
     ]);
 
-    const urls = agg.map(c => {
-      const name = encodeURIComponent(String(c._id));
-      return `<url><loc>${site}/cat/${name}/</loc><lastmod>${ymd(c.last)}</lastmod></url>`;
-    }).join('');
+    const urls = agg
+      .map((c) => {
+        const name = encodeURIComponent(String(c._id));
+        return `<url><loc>${site}/cat/${name}/</loc><lastmod>${ymd(c.last)}</lastmod></url>`;
+      })
+      .join('');
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
-
-    return gzip(xml);
   });
 
-  setXmlGz(res);
-  res.send(gz);
+  return sendXml(res, xml, isGz);
 };
