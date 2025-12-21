@@ -259,25 +259,11 @@ ${urls}
 
   return sendXml(res, xml, isGz);
 };
-
+const navs=require('../nav.json')
 exports.sitemapCat = async (req, res) => {
   const site = process.env.SITE_URL || `https://${req.hostname}`;
 
-  const cats = [
-    "今日吃瓜",
-    "每日大瓜",
-    "热门大瓜",
-    "必看大瓜",
-    "网红黑料",
-    "学生校园",
-    "明星黑料",
-    "领导干部",
-    "海外吃瓜",
-    "内涵段子",
-    "人人吃瓜",
-    "吃瓜新闻",
-    "看片娱乐"
-  ];
+  const cats = navs;
 
   // 如果你哪天想“不输出分类 sitemap”
   if (!cats.length) {
