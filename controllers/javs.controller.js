@@ -16,7 +16,7 @@ function escReg(s) {
 }
 
 exports.home = asyncHandler(async (req, res) => {
-  const {siteArr}=res.res.locals
+  const {siteArr}=res.locals
   // 首页：最新
    const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const limit = 40;
