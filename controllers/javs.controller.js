@@ -16,10 +16,11 @@ function escReg(s) {
 }
 
 exports.home = asyncHandler(async (req, res) => {
+  const {siteArr}=res.res.locals
   // 首页：最新
    const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const limit = 40;
-  const query = { disable: { $ne: 1 } };
+  const query = {site: { $nin: siteArr }};
 
   const result = await Jav.paginate(query, {
     page,

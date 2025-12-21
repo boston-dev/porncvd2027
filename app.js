@@ -47,9 +47,10 @@ app.use(generalLimiter);
 /** Static (7d cache) */
 app.use(express.static(path.join(__dirname, 'public')));
 app.use( async (req,res,next) => {
-  res.locals.gNav=gNav
-  res.locals.frends=[]
-    res.locals.curSite=''
+  res.locals.siteArr=['hanime']
+   res.locals.gNav=gNav
+   res.locals.frends=[]
+   res.locals.curSite=''
    res.locals.tplLang=''
    res.locals.orders_id=''
    res.locals.genreNav=genreNav
