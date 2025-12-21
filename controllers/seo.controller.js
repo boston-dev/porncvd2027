@@ -204,16 +204,18 @@ ${urls}
 };
 
 const navs=require('../nav.json')
+let genreNav=require('../genreNav.json')
+genreNav=genreNav.map(v => `/cat/${encodeURIComponent(v)}/?site=hanime`)
 exports.sitemapCat = async (req, res) => {
   const site = process.env.SITE_URL || `https://${req.hostname}`;
 
-  const catsRaw = navs || []; // 你的 navs
+  const catsRaw = [...navs] || []; // 你的 navs
   if (!Array.isArray(catsRaw) || catsRaw.length === 0) {
     return res.status(404).end();
   }
 
   // 1) 统一成 { text, href }
-  const cats = catsRaw
+  let cats = catsRaw
     .map((v) => {
       // 字符串：当分类名
       if (typeof v === "string") {
@@ -245,7 +247,7 @@ exports.sitemapCat = async (req, res) => {
       return null;
     })
     .filter(Boolean);
-
+ 
   // 2) 生成 loc：相对 -> 拼站点；绝对 -> 判断是否同域
   const toLoc = (href) => {
     if (!href) return null;
@@ -267,7 +269,11 @@ exports.sitemapCat = async (req, res) => {
     if (!href.startsWith("/")) href = `/${href}`;
     return site + href;
   };
-
+  genreNav.forEach(v =>{
+    cats.push({
+      href:v
+    })
+  })
   const urls = cats
     .map(({ href }) => {
       const loc = toLoc(href);
