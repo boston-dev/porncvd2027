@@ -6,7 +6,7 @@
   "main": "app.js",
   "scripts": {
     "start": "cross-env PORT=3026 SITE_NAME=91cgc SITE_URL=\"https://91cgc.com\" NODE_ENV=production node app.js",
-    "dev": "cross-env PORT=3026 SITE_NAME=91cgc SITE_URL=\"https://91cgc.com\" nodemon app.js"
+    "dev": "cross-env PORT=3026 SITE_NAME=91cgc SITE_URL=\"http://127.0.0.1:3026\" nodemon app.js"
   },
   "dependencies": {
     "compression": "^1.7.4",

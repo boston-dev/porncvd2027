@@ -22,6 +22,61 @@ const Jav = require('../models/Jav'); // TODO：改成你真实路径
 const SITEMAP_PAGE_SIZE = Number(process.env.SITEMAP_PAGE_SIZE || 20000);
 const SITEMAP_TTL_MS = Number(process.env.SITEMAP_TTL_MS || 10 * 60 * 1000);
 
+// ------------------------------
+// helpers: fixed categories + existence check
+// ------------------------------
+function parseJsonArray(v) {
+  if (!v) return null;
+  try {
+    const arr = JSON.parse(v);
+    return Array.isArray(arr) ? arr : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+const DEFAULT_FIXED_CATS = [
+  "今日吃瓜",
+  "每日大瓜",
+  "热门大瓜",
+  "必看大瓜",
+  "网红黑料",
+  "学生校园",
+  "明星黑料",
+  "领导干部",
+  "海外吃瓜",
+  "内涵段子",
+  "人人吃瓜",
+  "吃瓜新闻",
+  "看片娱乐",
+];
+
+// 通过环境变量固定分类（可选）
+// 例：CAT_FIXED='["今日吃瓜","每日大瓜"]'
+function getFixedCats() {
+  // 如果显式设置了 CAT_FIXED（即使是 []），优先使用它
+  if (Object.prototype.hasOwnProperty.call(process.env, 'CAT_FIXED')) {
+    const arr = parseJsonArray(process.env.CAT_FIXED);
+    if (!arr) return null;
+    return arr
+      .filter((x) => typeof x === 'string' && x.trim() !== '')
+      .map((x) => x.trim());
+  }
+
+  // 否则使用代码内默认固定分类（你也可以直接改这里）
+  return DEFAULT_FIXED_CATS.slice();
+}
+
+async function hasCatData(site, catField) {
+  const fixed = getFixedCats();
+  if (fixed) return fixed.length > 0;
+
+  // 轻量判断：是否存在任何一条带 catField 的数据（无需 distinct）
+  // 注意：catField 可能是 string / array，只要存在且非 null 即认为有分类
+  const exists = await Jav.exists({ disable: { $ne: 1 }, [catField]: { $exists: true, $ne: null } });
+  return !!exists;
+}
+
 const cache = new Map();
 async function cached(key, ttl, fn) {
   const now = Date.now();
@@ -109,13 +164,15 @@ exports.sitemapIndex = async (req, res) => {
     const shardLoc = (i) => `${site}/sitemap-javs-${i}.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
+    const catField = process.env.CAT_FIELD || 'cat';
+    const includeCat = await hasCatData(site, catField);
 
     let items = '';
     for (let i = 1; i <= pages; i++) {
       items += `<sitemap><loc>${shardLoc(i)}</loc><lastmod>${now}</lastmod></sitemap>`;
     }
     items += `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
-    items += `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
+    if (includeCat) items += `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -203,39 +260,46 @@ ${urls}
   return sendXml(res, xml, isGz);
 };
 
-// ✅ cat sitemap：/sitemap-cat.xml 或 /sitemap-cat.xml.gz
 exports.sitemapCat = async (req, res) => {
-  const site = getSiteUrl(req);
-  const isGz = wantsGzip(req);
-  const key = `smc:${site}`;
+  const site = process.env.SITE_URL || `https://${req.hostname}`;
 
-  const catField = process.env.CAT_FIELD || 'cat';
+  const cats = [
+    "今日吃瓜",
+    "每日大瓜",
+    "热门大瓜",
+    "必看大瓜",
+    "网红黑料",
+    "学生校园",
+    "明星黑料",
+    "领导干部",
+    "海外吃瓜",
+    "内涵段子",
+    "人人吃瓜",
+    "吃瓜新闻",
+    "看片娱乐"
+  ];
 
-  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
-    const agg = await Jav.aggregate([
-      { $match: { disable: { $ne: 1 }, [catField]: { $exists: true, $ne: null } } },
-      { $project: { c: `$${catField}`, u: { $ifNull: ['$updatedAt', '$date'] } } },
-      { $project: { cats: { $cond: [{ $isArray: '$c' }, '$c', ['$c']] }, u: 1 } },
-      { $unwind: '$cats' },
-      { $match: { cats: { $type: 'string', $ne: '' } } },
-      { $group: { _id: '$cats', last: { $max: '$u' }, cnt: { $sum: 1 } } },
-      { $match: { cnt: { $gte: 1 } } },
-      { $sort: { last: -1 } },
-      { $limit: 50000 },
-    ]);
+  // 如果你哪天想“不输出分类 sitemap”
+  if (!cats.length) {
+    return res.status(404).end();
+  }
 
-    const urls = agg
-      .map((c) => {
-        const name = encodeURIComponent(String(c._id));
-        return `<url><loc>${site}/cat/${name}/</loc><lastmod>${ymd(c.last)}</lastmod></url>`;
-      })
-      .join('');
+  const urls = cats.map(name => {
+    const enc = encodeURIComponent(name);
+    return `
+      <url>
+        <loc>${site}/cat/${enc}/</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+      </url>
+    `;
+  }).join('');
 
-    return `<?xml version="1.0" encoding="UTF-8"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
-  });
 
-  return sendXml(res, xml, isGz);
+  res.set('Content-Type', 'application/xml; charset=utf-8');
+  res.send(xml);
 };
