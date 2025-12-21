@@ -150,7 +150,7 @@ exports.sitemapJavsShard = async (req, res) => {
       .sort({ updatedAt: -1, date: -1, _id: -1 })
       .skip(skip)
       .limit(SITEMAP_PAGE_SIZE)
-      .select({ _id: 1, updatedAt: 1, date: 1 })
+      .select({ _id: 1, updatedAt: 1, date: 1,id:1 })
       .lean();
 
     const urls = docs
