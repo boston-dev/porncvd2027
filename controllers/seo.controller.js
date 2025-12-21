@@ -203,39 +203,90 @@ ${urls}
   return sendXml(res, xml, isGz);
 };
 
-// ✅ cat sitemap：/sitemap-cat.xml 或 /sitemap-cat.xml.gz
+const navs=require('../nav.json')
 exports.sitemapCat = async (req, res) => {
-  const site = getSiteUrl(req);
-  const isGz = wantsGzip(req);
-  const key = `smc:${site}`;
+  const site = process.env.SITE_URL || `https://${req.hostname}`;
 
-  const catField = process.env.CAT_FIELD || 'cat';
+  const catsRaw = navs || []; // 你的 navs
+  if (!Array.isArray(catsRaw) || catsRaw.length === 0) {
+    return res.status(404).end();
+  }
 
-  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
-    const agg = await Jav.aggregate([
-      { $match: { disable: { $ne: 1 }, [catField]: { $exists: true, $ne: null } } },
-      { $project: { c: `$${catField}`, u: { $ifNull: ['$updatedAt', '$date'] } } },
-      { $project: { cats: { $cond: [{ $isArray: '$c' }, '$c', ['$c']] }, u: 1 } },
-      { $unwind: '$cats' },
-      { $match: { cats: { $type: 'string', $ne: '' } } },
-      { $group: { _id: '$cats', last: { $max: '$u' }, cnt: { $sum: 1 } } },
-      { $match: { cnt: { $gte: 1 } } },
-      { $sort: { last: -1 } },
-      { $limit: 50000 },
-    ]);
+  // 1) 统一成 { text, href }
+  const cats = catsRaw
+    .map((v) => {
+      // 字符串：当分类名
+      if (typeof v === "string") {
+        const name = v.trim();
+        if (!name) return null;
+        return {
+          text: name,
+          href: `/cat/${encodeURIComponent(name)}`,
+        };
+      }
 
-    const urls = agg
-      .map((c) => {
-        const name = encodeURIComponent(String(c._id));
-        return `<url><loc>${site}/cat/${name}/</loc><lastmod>${ymd(c.last)}</lastmod></url>`;
-      })
-      .join('');
+      // 对象：支持 {text, href} 或 {name, href} 等
+      if (v && typeof v === "object") {
+        const text = String(v.text ?? v.name ?? "").trim();
+        const href = String(v.href ?? "").trim();
+        if (!text && !href) return null;
 
-    return `<?xml version="1.0" encoding="UTF-8"?>
+        // 没 href 但有 text：也按分类名走
+        if (!href && text) {
+          return {
+            text,
+            href: `/cat/${encodeURIComponent(text)}`,
+          };
+        }
+
+        return { text, href };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+
+  // 2) 生成 loc：相对 -> 拼站点；绝对 -> 判断是否同域
+  const toLoc = (href) => {
+    if (!href) return null;
+
+    // 绝对链接
+    if (/^https?:\/\//i.test(href)) {
+      try {
+        const u = new URL(href);
+        const my = new URL(site);
+        // 只收录同域（你也可以改成直接 return href; 但不推荐收录外站）
+        if (u.hostname !== my.hostname) return null;
+        return u.toString();
+      } catch {
+        return null;
+      }
+    }
+
+    // 相对路径
+    if (!href.startsWith("/")) href = `/${href}`;
+    return site + href;
+  };
+
+  const urls = cats
+    .map(({ href }) => {
+      const loc = toLoc(href);
+      if (!loc) return "";
+      return `
+  <url>
+    <loc>${loc}</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+    })
+    .filter(Boolean)
+    .join("");
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
-  });
 
-  return sendXml(res, xml, isGz);
+  res.set("Content-Type", "application/xml; charset=utf-8");
+  res.send(xml);
 };
