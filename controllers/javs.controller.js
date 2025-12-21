@@ -1,6 +1,6 @@
 'use strict';
 const asyncHandler = require('../utils/asyncHandler');
-const { buildListMeta} = require('../utils/buildMeta');
+const { buildListMeta,sanitizeUnicode} = require('../utils/buildMeta');
 const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
 const renderFallback = require('../utils/renderFallback');
 
@@ -219,8 +219,8 @@ exports.detail = [
 
     const SITE = process.env.SITE_URL || 'https://porncvd.com';
     const url = `${SITE}/javs/${video._id}.html`;
-    const title = video.title || 'Video';
-    const desc = (video.desc || title).slice(0, 160);
+    const title =sanitizeUnicode(video.title || 'Video') ;
+    const desc = sanitizeUnicode((video.desc || title).slice(0, 160));
     const m3u8 =`${video.source}${video.url}`
     const img=`${video.source}${video.img}`
    const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
@@ -229,7 +229,6 @@ exports.detail = [
       keywords: Array.isArray(video.tag) ? video.tag.join(',') : '',
       desc,
       canonical: url,
-
       og: {
         type: 'video.other',
         title,
@@ -241,8 +240,8 @@ exports.detail = [
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "VideoObject",
-        "name": title,
-        "description": desc,
+        "name":title ,
+        "description":desc ,
         "thumbnailUrl":img,
         "uploadDate": uploadDate,
         "embedUrl": url

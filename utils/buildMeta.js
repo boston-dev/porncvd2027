@@ -61,4 +61,14 @@ const desc =
     robots,
   };
 }
-module.exports = { buildListMeta };
+
+function sanitizeUnicode(str = '') {
+   if (typeof str !== 'string') return ''
+  // 删除未配对的 UTF-16 代理项（半个 emoji）
+  return String(str).replace(
+    /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
+    ''
+  );
+}
+
+module.exports = { buildListMeta,sanitizeUnicode };
