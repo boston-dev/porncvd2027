@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="juicyads-site-verification" content="a96d24db2da66299e192b9b713d2ab71">
-    <meta name="shenma-site-verification" content="50720d993aea6d6ed902fa6b1e9c117a_1716104500">
     <%- include meta.html%>
     <link href="/style/css/bootstrap.min.css" rel="stylesheet">
     <link href="/style/css/app.css" rel="stylesheet">
@@ -27,7 +25,7 @@
 
                     <li
                             class="nav-list">
-                        <a href="/">
+                        <a href="<%=basePath%>">
                             首页
                         </a></li>
 
@@ -44,14 +42,14 @@
                             <li class="nav-list"><a class="js-nav-head "
                                 target="_blank" 
                                 href="<%=item.href%>"
-                                ><%=item.text%></a></li>
+                                ><%=t(item.text)%></a></li>
                             <%
                             }else{
                             %>
                             <li class="nav-list"><a class="js-nav-head "
     
                                 href="/cat/<%=item%>/<%=curSite ? `?site=${curSite}` : ''%>"
-                                ><%=item%></a></li>
+                                ><%=t(item)%></a></li>
                             <%
                             }
                             %>
@@ -83,7 +81,7 @@
                                 target="_blank" 
                                 href="<%=item.href%>"
                                 >
-                                <span class="iconicfill-hash text-danger "></span><%=item.text%>
+                                <span class="iconicfill-hash text-danger "></span><%=t(item.text)%>
                             </a></li>
                             <%
                             }else{
@@ -92,7 +90,7 @@
     
                                 href="/cat/<%=item%>/"
                                 >
-                                <span class="iconicfill-hash text-danger "></span><%=item%>
+                                <span class="iconicfill-hash text-danger "></span><%=t(item)%>
                             </a></li>
                             <%
                             }

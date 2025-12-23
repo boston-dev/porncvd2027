@@ -3,7 +3,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { buildListMeta,sanitizeUnicode} = require('../utils/buildMeta');
 const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
 const renderFallback = require('../utils/renderFallback');
-
+const OpenCC = require('opencc-js')
+const toTwp = OpenCC.Converter({ from: 'cn', to: 'twp' })
 const Jav = require('../models/Jav');
 
 /**
@@ -40,13 +41,15 @@ exports.home = asyncHandler(async (req, res) => {
 });
 
 exports.search = asyncHandler(async (req, res) => {
-  const qRaw = (req.query.search_query || '').trim();
+  let qRaw = (req.query.search_query || '').trim();
   const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const limit = 40;
 
   // 防刷：太长直接拒绝（避免 regex 被滥用）
   if (qRaw.length > 60) return res.status(400).send('Bad Request');
-
+ if(res.locals.isCN){
+  qRaw=toTwp(qRaw)
+ }
   const query = { };
   if (qRaw) {
     const reg = new RegExp(escReg(qRaw), 'i');
@@ -218,9 +221,15 @@ exports.detail = [
     const fentData={ video,docs}
 
     const SITE = process.env.SITE_URL || 'https://porncvd.com';
-    const url = `${SITE}/javs/${video._id}.html`;
+
+    const url = `${SITE}${res.locals.basePath}/javs/${video._id}.html`;
     const title =sanitizeUnicode(video.title || 'Video') ;
     const desc = sanitizeUnicode((video.desc || title).slice(0, 160));
+
+    // const url = `/javs/${video._id}.html`;
+    // const title =res.locals.t(video.title || 'Video');
+    // const desc = res.locals.t((video.desc || title).slice(0, 160));
+
     const m3u8 =`${video.source}${video.url}`
     const img=`${video.source}${video.img}`
    const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
@@ -240,8 +249,8 @@ exports.detail = [
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "VideoObject",
-        "name":title ,
-        "description":desc ,
+        "name":res.locals.t(title) ,
+        "description": res.locals.t(desc),
         "thumbnailUrl":img,
         "uploadDate": uploadDate,
         "embedUrl": url

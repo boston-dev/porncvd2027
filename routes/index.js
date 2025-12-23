@@ -1,6 +1,5 @@
 'use strict';
 const router = require('express').Router();
-
 const javs = require('../controllers/javs.controller');
 const seo = require('../controllers/seo.controller');
 
@@ -8,10 +7,17 @@ router.get('/', javs.home);
 router.get('/search/:search_query?/:p?', javs.search);
 router.get('/tag/:name/:p?', javs.tag);
 router.get('/cat/:name/:p?', javs.tag);
-router.get('/genre/:p?', javs.genre);
-// Detail routes (with validation inside controller)
 router.get('/javs/:id.html', javs.detail);
 
+// ===== 简体入口（新增）=====
+//router.get('/zh-CN', javs.home);
+router.get('/zh-CN', javs.home);
+router.get('/zh-CN/search/:search_query?/:p?', javs.search);
+router.get('/zh-CN/tag/:name/:p?', javs.tag);
+router.get('/zh-CN/cat/:name/:p?', javs.tag);
+router.get('/zh-CN/javs/:id.html', javs.detail);
+
+router.get('/genre/:p?', javs.genre);
 router.post('/users/resource', javs.resourcePost);
 router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);
