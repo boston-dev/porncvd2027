@@ -64,6 +64,7 @@
             <input class="btn" type="submit" value="Search"
                    style="background:url('/se2.png') no-repeat center center #ec585e;text-indent: -99999px">
         </form>
+        <%if(curSite !='hanime'){%>
         <div class="lang-switch" basePath="<%=basePath%>">
               <%if(isCN){%>
               <a href="javascript:;" class="lang-btn active">简体</a>      
@@ -75,6 +76,9 @@
             }
             %> 
         </div>
+        <%
+            }
+            %> 
     </div>
     <div style="background-color: #1a1a1a;width: 100%">
         <div style="padding: 8px 0;flex-wrap: wrap" class="d-flex  justify-content-center">

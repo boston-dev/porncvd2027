@@ -247,7 +247,13 @@ exports.sitemapCat = async (req, res) => {
       return null;
     })
     .filter(Boolean);
- 
+   let zhCH=cats.map(v =>{
+    return {
+      ...v,
+      href:'/zh-CN'+v.href
+    }
+   }) 
+   cats=[...zhCH,...cats]
   // 2) 生成 loc：相对 -> 拼站点；绝对 -> 判断是否同域
   const toLoc = (href) => {
     if (!href) return null;

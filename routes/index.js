@@ -16,7 +16,16 @@ router.get('/zh-CN/search/:search_query?/:p?', javs.search);
 router.get('/zh-CN/tag/:name/:p?', javs.tag);
 router.get('/zh-CN/cat/:name/:p?', javs.tag);
 router.get('/zh-CN/javs/:id.html', javs.detail);
-router.get('/zh-CN/genre/:p?', javs.genre);
+router.get('/zh-CN/genre/:p?', (req, res) => {
+  const p = req.params.p ? `/${req.params.p}` : '';
+
+  // 保留 ?xxx=yyy
+  const qs = req.originalUrl.includes('?')
+    ? req.originalUrl.slice(req.originalUrl.indexOf('?'))
+    : '';
+
+  return res.redirect(301, `/genre${p}${qs}`);
+});
 
 router.post('/users/resource', javs.resourcePost);
 router.post('/thumbzilla/checkData', javs.resourceFind);
