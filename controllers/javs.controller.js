@@ -34,6 +34,19 @@ exports.home = asyncHandler(async (req, res) => {
   Object.assign(result,{
     ...withPageRange(result,{prelink:'/?page=pageTpl'})
   })
+   const {t,isCN}=res.locals
+  if(isCN){
+    result.docs=result.docs.map(video =>{
+      const isHanime=video.site == 'hanime'
+      if(isHanime) return video
+      return {
+        ...video,
+        title:t(video.title),
+        keywords:t(video.title),
+        desc:t(video.desc),
+      }
+    })
+  }
   if(req.query.ajax){
        return  res.send( result);
    }
@@ -71,6 +84,19 @@ exports.search = asyncHandler(async (req, res) => {
    Object.assign(result,{
     ...withPageRange(result,{prelink:`/search/javs?search_query=${qRaw}&page=pageTpl`})
   })
+  const {t,isCN}=res.locals
+  if(isCN){
+    result.docs=result.docs.map(video =>{
+      const isHanime=video.site == 'hanime'
+      if(isHanime) return video
+      return {
+        ...video,
+        title:t(video.title),
+        keywords:t(video.title),
+        desc:t(video.desc),
+      }
+    })
+  }
    if(req.query.ajax){
        return  res.send( result);
    }
@@ -104,7 +130,7 @@ exports.tag = asyncHandler(async (req, res) => {
     const optRegexp = keywords
       .filter(Boolean)
       .map(k => new RegExp(escapeRegExp(k.trim()), 'i'));
-
+     
     const query = optRegexp.length
       ? { tag: { $in: optRegexp } }
       : {}; // 没关键词就不加条件，避免 $in: []
@@ -136,6 +162,22 @@ exports.tag = asyncHandler(async (req, res) => {
   Object.assign(result,{
     ...withPageRange(result,{prelink})
   })
+  const {t,isCN}=res.locals
+  if(isCN){
+    result.docs=result.docs.map(video =>{
+      const isHanime=video.site == 'hanime'
+      if(isHanime) return video
+      return {
+        ...video,
+        title:t(video.title),
+        keywords:t(video.title),
+        desc:t(video.desc),
+      }
+    })
+  }
+  if(req.query.ajax){
+       return  res.send( result);
+   }
   return res.render('boot', result);
 });
 exports.genre = asyncHandler(async (req, res) => {
@@ -156,6 +198,14 @@ exports.genre = asyncHandler(async (req, res) => {
   Object.assign(result,{
     ...withPageRange(result,{prelink})
   })
+  res.locals.meta = buildListMeta({
+    req,
+    type:'cat',
+    name:'動漫',
+    page,
+    totalPages: result.totalPages, // 你 paginate 的返回
+    siteName: process.env.SITE_NAME
+  });
   return res.render('boot', result);
 });
 /**
