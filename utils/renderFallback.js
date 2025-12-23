@@ -24,7 +24,7 @@ module.exports = async function renderFallback(req, res, opts = {}) {
         },
       },
       { $sample: { size: limit } },
-      { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1,source:1  } },
+      { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1,source:1,site:1  } },
     ]);
     // 2) 不足就全站随机补齐
     if (docs.length < limit) {
@@ -34,7 +34,7 @@ module.exports = async function renderFallback(req, res, opts = {}) {
       const more = await Jav.aggregate([
         { $match: { disable: { $ne: 1 }, _id: { $nin: existingIds } } },
         { $sample: { size: need } },
-        { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1,source:1 } },
+        { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1,source:1,site:1 } },
       ]);
 
       docs = docs.concat(more);

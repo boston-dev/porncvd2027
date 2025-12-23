@@ -12,9 +12,9 @@
                      <!--   -->
                     <img class="img-fluid rounded lazyload video-list-image"
                          data-src="<%= item.source %><%=item.img%>"
-                         title="<%=t(item.title)%>"
+                         title="<%=item[`title${tplLang}`] || item[`title`]%>"
                          src="https://puui.qpic.cn/vupload/0/common_pic_v.png/0"
-                         alt="<%=t(item.title)%>"
+                         alt="<%=item[`title${tplLang}`] || item[`title`]%>"
                          />
                 </a>
             </div>

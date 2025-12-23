@@ -22,13 +22,12 @@
         <nav>
             <div class="menu-container">
                 <ul class="nav">
-
                     <li
-                            class="nav-list">
-                        <a href="<%=basePath%>">
+                        class="nav-list">
+                        <a href="<%=basePath == '' ? '/' : basePath%>">
                             首页
-                        </a></li>
-
+                     </a>
+                    </li>
                     <%
                     if(curSite){
                         gNav=genreNav
@@ -41,15 +40,15 @@
                             %>
                             <li class="nav-list"><a class="js-nav-head "
                                 target="_blank" 
-                                href="<%=item.href%>"
-                                ><%=t(item.text)%></a></li>
+                                href="<%=basePath%><%=item.href%>"
+                                ><%=item.text%></a></li>
                             <%
                             }else{
                             %>
                             <li class="nav-list"><a class="js-nav-head "
     
-                                href="/cat/<%=item%>/<%=curSite ? `?site=${curSite}` : ''%>"
-                                ><%=t(item)%></a></li>
+                                href="<%=basePath%>/cat/<%=item%>/<%=curSite ? `?site=${curSite}` : ''%>"
+                                ><%=item%></a></li>
                             <%
                             }
                             %>
@@ -65,6 +64,17 @@
             <input class="btn" type="submit" value="Search"
                    style="background:url('/se2.png') no-repeat center center #ec585e;text-indent: -99999px">
         </form>
+        <div class="lang-switch" basePath="<%=basePath%>">
+              <%if(isCN){%>
+              <a href="javascript:;" class="lang-btn active">简体</a>      
+              <%
+                }else{
+                %>
+                <a href="javascript:;" class="lang-btn active">繁體</a>
+             <%
+            }
+            %> 
+        </div>
     </div>
     <div style="background-color: #1a1a1a;width: 100%">
         <div style="padding: 8px 0;flex-wrap: wrap" class="d-flex  justify-content-center">
@@ -79,18 +89,18 @@
                             %>
                             <li class="nav-list"><a class="js-nav-head mr-1"
                                 target="_blank" 
-                                href="<%=item.href%>"
+                                href="<%=basePath%><%=item.href%>"
                                 >
-                                <span class="iconicfill-hash text-danger "></span><%=t(item.text)%>
+                                <span class="iconicfill-hash text-danger "></span><%=item.text%>
                             </a></li>
                             <%
                             }else{
                             %>
                             <li class="nav-list"><a class="js-nav-head mr-1"
     
-                                href="/cat/<%=item%>/"
+                                href="<%=basePath%>/cat/<%=item%>/"
                                 >
-                                <span class="iconicfill-hash text-danger "></span><%=t(item)%>
+                                <span class="iconicfill-hash text-danger "></span><%=item%>
                             </a></li>
                             <%
                             }
@@ -102,13 +112,21 @@
         </div>
     </div>
 </header>
-
 <script>
-    var docs=[]
-    $('#main-nav .nav-desktop-items').each(function(){
-        docs.push($(this).text().trim())
+    $('.lang-switch').click(function(){
+        var fullPath = window.location.pathname + window.location.search;
+        if($(this).attr('basePath') == '/zh-CN'){
+            fullPath=fullPath.replace('/zh-CN','')
+        }else{
+           fullPath='/zh-CN'+fullPath
+        }
+        if(fullPath=='' || fullPath=='//'){
+          fullPath='/'
+        }
+       location.href=fullPath
     })
 </script>
+
 <div class="container container-content no-cate-container-content" >
     <div class="main mobile-main">
          <%- include pic.html%>

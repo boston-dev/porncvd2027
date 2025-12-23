@@ -8,7 +8,7 @@ router.get('/search/:search_query?/:p?', javs.search);
 router.get('/tag/:name/:p?', javs.tag);
 router.get('/cat/:name/:p?', javs.tag);
 router.get('/javs/:id.html', javs.detail);
-
+router.get('/genre/:p?', javs.genre);
 // ===== 简体入口（新增）=====
 //router.get('/zh-CN', javs.home);
 router.get('/zh-CN', javs.home);
@@ -16,8 +16,8 @@ router.get('/zh-CN/search/:search_query?/:p?', javs.search);
 router.get('/zh-CN/tag/:name/:p?', javs.tag);
 router.get('/zh-CN/cat/:name/:p?', javs.tag);
 router.get('/zh-CN/javs/:id.html', javs.detail);
+router.get('/zh-CN/genre/:p?', javs.genre);
 
-router.get('/genre/:p?', javs.genre);
 router.post('/users/resource', javs.resourcePost);
 router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);

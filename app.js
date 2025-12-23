@@ -42,10 +42,11 @@ app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 app.use(requestId());
 app.use(morgan(':date[iso] :method :url :status :res[content-length] - :response-time ms rid=:req[x-request-id] ip=:req[x-forwarded-for]'));
 app.use(requestLogger());
-
 /** Rate limit (global baseline) */
+
 app.use(generalLimiter);
 /** Static (7d cache) */
+const hasKana = (s) => /[\u3040-\u30ff]/.test(s); 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use( async (req,res,next) => {
   res.locals.siteArr=['hanime']
@@ -57,12 +58,13 @@ app.use( async (req,res,next) => {
    res.locals.genreNav=genreNav
    // 是否简体页面（只判断路由前缀）
   res.locals.isCN = req.path.startsWith('/zh-CN')
-  res.locals.basePath= res.locals.isCN ? '/zh-CN' :'/'
-  res.locals.t = (text) => {
-    if (!text) return text
+  res.locals.basePath= res.locals.isCN ? '/zh-CN' :''
+  res.locals.t = (text,typeSite) => {
+    if (!text || typeSite=='hanime') return text
     const str = String(text)
     return res.locals.isCN ? toCN(str) : str
   }
+
    res.locals.meta={
       "title": "porncvd - 素人av/免費A片/流出/性愛自拍/素人/成人無碼/免費成人/台灣自拍",
       "keywords": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",

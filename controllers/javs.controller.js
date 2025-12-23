@@ -27,7 +27,7 @@ exports.home = asyncHandler(async (req, res) => {
     page,
     limit,
     sort: { date: -1 },
-    select: 'title title_en img url site tag cat date id path vipView  source',
+    select: 'title title_en img url site tag cat date id path vipView  source site',
     lean: true,
     leanWithId: false,
   });
@@ -62,7 +62,7 @@ exports.search = asyncHandler(async (req, res) => {
     page,
     limit,
     sort: { date: -1 },
-    select: 'title title_en img url site tag cat date id path vipView  source',
+    select: 'title title_en img url site tag cat date id path vipView  source  site',
     lean: true,
     leanWithId: false,
   });
@@ -120,7 +120,7 @@ exports.tag = asyncHandler(async (req, res) => {
     page,
     limit,
     sort: { date: -1 },
-    select: 'title title_en img url site tag cat date id path vipView  source',
+    select: 'title title_en img url site tag cat date id path vipView  source site',
     lean: true,
     leanWithId: false,
   });
@@ -148,7 +148,7 @@ exports.genre = asyncHandler(async (req, res) => {
     page,
     limit,
     sort: { date: -1 },
-    select: 'title title_en img url site tag cat date id path vipView  source',
+    select: 'title title_en img url site tag cat date id path vipView  source site',
     lean: true,
     leanWithId: false,
   });
@@ -171,6 +171,7 @@ exports.detail = [
 
     const raw = req.params.id || '';
     const id = raw.replace(/\.html$/i, '');
+    const {t,isCN}=res.locals
     // ✅ fast ObjectId regex validation
     if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
@@ -201,10 +202,11 @@ exports.detail = [
     if (!video || video.disable === 1) {
       return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
-    if(video.site == 'hanime'){
-            res.locals.curSite='hanime'
+    const isHanime=video.site == 'hanime'
+    if(isHanime){
+        res.locals.curSite='hanime'
      }
-   
+     
     const tags = Array.isArray(video.tag) ? video.tag.filter(Boolean) : [];
     const relateDoc = {
       _id: { $ne: video._id },
@@ -223,16 +225,16 @@ exports.detail = [
     const SITE = process.env.SITE_URL || 'https://porncvd.com';
 
     const url = `${SITE}${res.locals.basePath}/javs/${video._id}.html`;
-    const title =sanitizeUnicode(video.title || 'Video') ;
-    const desc = sanitizeUnicode((video.desc || title).slice(0, 160));
+    let title =sanitizeUnicode(video.title || 'Video') ;
+    let desc = sanitizeUnicode((video.desc || title).slice(0, 160));
+    if(isCN && !isHanime){
+      title=t(title)
+      desc=t(desc)
+    }
 
-    // const url = `/javs/${video._id}.html`;
-    // const title =res.locals.t(video.title || 'Video');
-    // const desc = res.locals.t((video.desc || title).slice(0, 160));
-
-    const m3u8 =`${video.source}${video.url}`
     const img=`${video.source}${video.img}`
    const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
+    
     res.locals.meta={
       title: `${title} - ${process.env.SITE_NAME}`,
       keywords: Array.isArray(video.tag) ? video.tag.join(',') : '',
@@ -249,8 +251,8 @@ exports.detail = [
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "VideoObject",
-        "name":res.locals.t(title) ,
-        "description": res.locals.t(desc),
+        "name":title,
+        "description":desc,
         "thumbnailUrl":img,
         "uploadDate": uploadDate,
         "embedUrl": url

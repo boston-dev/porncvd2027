@@ -48,7 +48,7 @@
 
     <div class="my-2 px-1 videotitle">
         <h4 class="vtitle min-mx--30 ">
-            <span><%=t(video.title)%></span></h4>
+            <span><%=video[`title${tplLang}`]%></span></h4>
     </div>
     <div class="js-vserson hidden"></div>
     <div class="hidden js-vaid-box">
@@ -85,7 +85,7 @@
             <%
             for(let k=0;k<video.tag.length;k++){
             %>
-            <a href="/tag/<%=video.tag[k]%>/<% if(curSite){%>?site=<%=curSite%><%}%>" class="btn my-1 btn-secondary btn-sm"><%=t(video.tag[k])%></a>
+            <a href="/tag/<%=video.tag[k]%>/<% if(curSite){%>?site=<%=curSite%><%}%>" class="btn my-1 btn-secondary btn-sm"><%=video.tag[k]%></a>
 
             <%
             }
@@ -97,7 +97,7 @@
         <div class="js-vserson hidden"></div>
 
         <div style="color: #b8babc;" class="min-mx--30 px-1 videotitle">
-            <p><%=t(video.desc)%></p>
+            <p><%=video[`desc${tplLang}`] || video[`desc`]%></p>
         </div>
 
 
