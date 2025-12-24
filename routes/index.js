@@ -31,6 +31,9 @@ router.post('/users/resource', javs.resourcePost);
 router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);
 
+router.get('/dmca.html', (req, res) => {
+  return res.render('dmca');
+});
 // robots
 router.get('/robots.txt', seo.robots);
 

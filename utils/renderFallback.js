@@ -39,7 +39,16 @@ module.exports = async function renderFallback(req, res, opts = {}) {
 
       docs = docs.concat(more);
     }
-
+    if(status == 404){
+      
+     return res.status(status).render(view, {
+        docs,
+        page: 1,
+        total: docs.length,
+        q: '',
+        message,
+      });
+    }
     return res.status(status).render(view, {
       docs,
       page: 1,

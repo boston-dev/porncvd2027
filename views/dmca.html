@@ -1,0 +1,178 @@
+<%- include include/boot-head.html%>
+<style>
+    :root{
+      --bg:#111;
+      --panel:#1b1b1b;
+      --text:#e9e9e9;
+      --muted:#a8a8a8;
+      --line:rgba(255,255,255,.08);
+      --accent:#ff4d5a;
+      --accent2:#ff2d3d;
+      --radius:12px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang TC","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;
+      line-height:1.65;
+    }
+    a{color:var(--accent); text-decoration:none}
+    a:hover{color:var(--accent2)}
+    .wrap{max-width:1100px; margin:0 auto; padding:24px 16px 60px}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    h1{
+      margin:0 0 10px;
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.5px;
+    }
+    .desc{color:var(--muted); margin:0 0 18px; font-size:14px}
+    h2{
+      margin:18px 0 8px;
+      font-size:16px;
+      font-weight:700;
+    }
+    ul{margin:8px 0 0 20px}
+    li{margin:6px 0}
+    .hr{height:1px;background:var(--line);margin:18px 0}
+    .pill{
+      display:inline-block;
+      padding:6px 10px;
+      border:1px solid rgba(255,77,90,.45);
+      background:rgba(255,77,90,.10);
+      color:#ffd6d9;
+      border-radius:999px;
+      font-size:12px;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+    .cta{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:40px;
+      padding:0 14px;
+      border-radius:10px;
+      border:1px solid rgba(255,77,90,.65);
+      background:rgba(255,77,90,.18);
+      color:#fff;
+      font-weight:700;
+      letter-spacing:.3px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:hover{background:rgba(255,77,90,.26)}
+    .btn.secondary{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      font-weight:600;
+    }
+    .btn.secondary:hover{background:rgba(255,255,255,.09)}
+    code{
+      background:rgba(255,255,255,.06);
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid var(--line);
+      color:#fff;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      font-size:12px;
+    }
+    .foot{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:14px;
+    }
+  </style>
+  <!-- 你站點原本的 header/nav 建議沿用（此頁只放內容區） -->
+  <div class="wrap">
+    <div class="card">
+      <div class="pill">著作權政策</div>
+      <div class="pill">DMCA</div>
+      <div class="pill">Takedown</div>
+
+      <h1>著作權 / DMCA 侵權通知與下架政策</h1>
+      <p class="desc">
+        我們尊重著作權並遵守相關法律規範。若您認為本站內容侵犯您的著作權或相關權利，請依下列方式提供完整資訊，我們會在核實後儘快處理（移除/限制訪問/斷開連結等）。
+      </p>
+
+      <div class="hr"></div>
+
+      <h2>一、如何提交侵權通知（Takedown Notice）</h2>
+      <p class="desc">請將以下資訊寄至本站指定信箱（越完整越快處理）：</p>
+      <ul>
+        <li>您的姓名/公司名稱與聯絡方式（Email）。</li>
+        <li>權利證明：例如原始作品連結、授權文件、或可辨識您為權利人的說明。</li>
+        <li>被侵權頁面網址（請提供完整 URL，可多筆）。</li>
+        <li>您希望的處理方式（下架/移除連結/其他）。</li>
+        <li>聲明：您善意相信該使用未經授權，且所提供資訊真實（可在信件末尾附上聲明文字）。</li>
+      </ul>
+
+      <div class="cta">
+        <!-- ✅ 把這個信箱改成你的 -->
+        <a class="btn" href="mailto:armandolailah70591@gmail.com?subject=DMCA%20侵權通知%20/%20Takedown%20Request">
+          寄送侵權通知到：armandolailah70591@gmail.com
+        </a>
+        <a class="btn secondary" href="/">返回首頁</a>
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>二、反通知（Counter-Notice）</h2>
+      <p class="desc">
+        若您認為內容被錯誤移除，或您擁有合法授權，您可提出反通知。請提供：
+      </p>
+      <ul>
+        <li>被移除內容之網址或可辨識資訊。</li>
+        <li>您主張合法的理由（例如授權、合理使用、或誤報）。</li>
+        <li>您的聯絡方式與身份聲明（資訊需真實）。</li>
+      </ul>
+
+      <div class="hr"></div>
+
+      <h2>三、處理原則</h2>
+      <ul>
+        <li>收到完整通知後，我們會在合理時間內核實並處理。</li>
+        <li>對於重複侵權或多次遭有效通知之內容，我們可能採取更嚴格措施（移除/封鎖）。</li>
+        <li>若通知內容不完整，可能延後處理或要求補充資料。</li>
+      </ul>
+
+      <div class="hr"></div>
+
+      <h2>四、重要提醒</h2>
+      <ul>
+        <li>請勿提交不實或惡意投訴。若提供虛假資訊，可能需承擔法律責任。</li>
+        <li>本站僅提供權利人聯絡與下架機制，不提供法律建議。</li>
+      </ul>
+
+      <p class="foot">
+        最後更新：<span id="lastUpdated"></span>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // 自動填上最後更新日期（台灣常用格式）
+    (function(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      document.getElementById('lastUpdated').textContent = `${y}-${m}-${day}`;
+    })();
+  </script>
+<%- include include/boot-footer.html%>
