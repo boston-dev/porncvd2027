@@ -197,7 +197,7 @@ exports.detail = [
     }).lean();
 
     if (!video || video.disable === 1) {
-      return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
+      return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
     }
     if(video.site == 'hanime'){
             res.locals.curSite='hanime'
