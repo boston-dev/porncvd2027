@@ -8,6 +8,7 @@ router.get('/search/:search_query?/:p?', javs.search);
 router.get('/tag/:name/:p?', javs.tag);
 router.get('/cat/:name/:p?', javs.tag);
 router.get('/javs/:id.html', javs.detail);
+router.get('/hot.html', javs.detail);
 router.get('/genre/:p?', javs.genre);
 // ===== 简体入口（新增）=====
 //router.get('/zh-CN', javs.home);
@@ -18,12 +19,10 @@ router.get('/zh-CN/cat/:name/:p?', javs.tag);
 router.get('/zh-CN/javs/:id.html', javs.detail);
 router.get('/zh-CN/genre/:p?', (req, res) => {
   const p = req.params.p ? `/${req.params.p}` : '';
-
   // 保留 ?xxx=yyy
   const qs = req.originalUrl.includes('?')
     ? req.originalUrl.slice(req.originalUrl.indexOf('?'))
     : '';
-
   return res.redirect(301, `/genre${p}${qs}`);
 });
 

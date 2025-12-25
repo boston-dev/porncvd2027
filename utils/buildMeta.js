@@ -70,5 +70,20 @@ function sanitizeUnicode(str = '') {
     ''
   );
 }
+const fs = require("fs/promises");
+const path = require("path");
 
-module.exports = { buildListMeta,sanitizeUnicode };
+async function saveRankJson({ site, data }) {
+  const filePath = path.join(process.cwd(), "ranks",`${site}.json`);
+  const dir = path.dirname(filePath);
+
+  // 1) 确保目录存在（ranks/site/）
+  await fs.mkdir(dir, { recursive: true });
+
+  // 2) 写文件（格式化，方便排查）
+  const json = JSON.stringify(data, null, 2);
+  await fs.writeFile(filePath, json, "utf8");
+
+  return filePath;
+}
+module.exports = { buildListMeta,sanitizeUnicode,saveRankJson };

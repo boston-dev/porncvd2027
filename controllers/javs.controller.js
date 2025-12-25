@@ -1,6 +1,6 @@
 'use strict';
 const asyncHandler = require('../utils/asyncHandler');
-const { buildListMeta,sanitizeUnicode} = require('../utils/buildMeta');
+const { buildListMeta,sanitizeUnicode,saveRankJson} = require('../utils/buildMeta');
 const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
 const renderFallback = require('../utils/renderFallback');
 const OpenCC = require('opencc-js')
@@ -270,7 +270,8 @@ exports.detail = [
       .limit(22)
       .select({ title: 1, img: 1, site: 1, tag: 1, cat: 1, date: 1, id: 1, path: 1 ,source: 1,})
       .lean();
-    const fentData={ video,docs}
+    
+    
 
     const SITE = process.env.SITE_URL || 'https://porncvd.com';
 
@@ -280,8 +281,15 @@ exports.detail = [
     if(isCN && !isHanime){
       title=t(title)
       desc=t(desc)
+      docs.forEach(v =>{
+        if(v.site !== 'hanime'){
+          v.title=t(v.title)
+          v.desc=t(v.desc)
+        }
+      })
     }
-
+    video.title=title
+    video.desc=desc
     const img=`${video.source}${video.img}`
    const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
     
@@ -308,6 +316,7 @@ exports.detail = [
         "embedUrl": url
       }
     }
+    const fentData={ video,docs}
     if (req.query.ajax) return res.send(fentData);
 
     return res.render('nice', fentData);
@@ -351,4 +360,19 @@ exports.resourceFind = asyncHandler(async (req, res) => {
    })
   }
   return res.json({ code: 200, data: doc });
+});
+ 
+exports.chatsHost=asyncHandler(async (req, res) => {
+  const arr = req.body || {};
+  if(!arr.length) {
+     return res.json({
+      code:600,
+      msg:'不能是空数组',
+    })
+  }
+  const file= await saveRankJson({site:arr[0].site,data:arr})
+   return res.json({
+      code:200,
+      file,
+    })
 });
