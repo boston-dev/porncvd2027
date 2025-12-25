@@ -169,7 +169,7 @@ exports.detail = [
     const id = raw.replace(/\.html$/i, '');
     // ✅ fast ObjectId regex validation
     if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
-      return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
+      return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
     }
       
     const video = await Jav.findById(id).select({
