@@ -27,10 +27,10 @@ router.get('/zh-CN/genre/:p?', (req, res) => {
   return res.redirect(301, `/genre${p}${qs}`);
 });
 
-router.post('/users/resource', javs.resourcePost);
+router.post('/users/resource', javs.resourcePost);//chatgpt
 router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);
-
+router.post('/users/chatsHost', javs.chatsHost);
 router.get('/dmca.html', (req, res) => {
   return res.render('dmca');
 });
