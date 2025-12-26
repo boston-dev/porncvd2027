@@ -12,7 +12,8 @@ const routes = require('./routes');
 const { requestId, requestLogger } = require('./middleware/requestLogger');
 const { notFound, errorHandler } = require('./middleware/errors');
 const { generalLimiter } = require('./middleware/rateLimit');
-const OpenCC = require('opencc-js')
+const OpenCC = require('opencc-js');
+const { text } = require('stream/consumers');
 const toCN = OpenCC.Converter({ from: 'twp', to: 'cn' })
 const app = express();
 
@@ -49,16 +50,30 @@ app.use(generalLimiter);
 const hasKana = (s) => /[\u3040-\u30ff]/.test(s); 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use( async (req,res,next) => {
+     // 是否简体页面（只判断路由前缀）
+  res.locals.isCN = req.path.startsWith('/zh-CN')
+  res.locals.basePath= res.locals.isCN ? '/zh-CN' :''
+
   res.locals.siteArr=['hanime']
    res.locals.gNav=gNav
+   if(res.locals.isCN){
+    res.locals.gNav=res.locals.gNav.map(v =>{
+      if(v.text){
+        return {
+          ...v,
+          text:toCN(v.text)
+        }
+      }else{
+         return toCN(v)
+      }
+    })
+   }
    res.locals.frends=[]
    res.locals.curSite=''
    res.locals.tplLang=''
    res.locals.orders_id=''
    res.locals.genreNav=genreNav
-   // 是否简体页面（只判断路由前缀）
-  res.locals.isCN = req.path.startsWith('/zh-CN')
-  res.locals.basePath= res.locals.isCN ? '/zh-CN' :''
+
   res.locals.t = (text,typeSite) => {
     if (!text || typeSite=='hanime') return text
     const str = String(text)
