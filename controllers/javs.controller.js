@@ -169,7 +169,7 @@ exports.detail = [
     const id = raw.replace(/\.html$/i, '');
     // ✅ fast ObjectId regex validation
     if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
-      return renderFallback(req, res, { status: 400, view: 'boot', limit: 16 });
+      return res.redirect('/')
     }
       
     const video = await Jav.findById(id).select({
@@ -197,7 +197,7 @@ exports.detail = [
     }).lean();
 
     if (!video || video.disable === 1) {
-      return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
+      return renderFallback(req, res, { status: 404, view: '404', limit: 16 });
     }
     if(video.site == 'hanime'){
             res.locals.curSite='hanime'
