@@ -1,4 +1,8 @@
 [
+    {
+        "text": "當前最熱",
+        "href": "/hot"
+    },
     "VIP熱門",
     "台灣",
     "國產",
@@ -9,7 +13,8 @@
     "探花",
     {
         "text": "動漫",
-        "href": "/genre"
+        "href": "/genre",
+        "target":"_blank"
     },
     "傳媒"
 ]
