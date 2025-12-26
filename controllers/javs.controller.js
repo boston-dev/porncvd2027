@@ -377,3 +377,40 @@ exports.chatsHost=asyncHandler(async (req, res) => {
       file,
     })
 });
+
+exports.hot = asyncHandler(async (req, res) => {
+  const {siteArr}=res.locals
+  // 首页：最新
+   const page = Math.max(1, parseInt(req.params.p || '1', 10));
+  const limit = 40;
+  const query = {hot: { $gt: 0 }};
+
+  const result = await Jav.paginate(query, {
+    page,
+    limit,
+    sort: { hot: -1, date: -1 },
+    select: 'title title_en img url site tag cat date id path vipView  source site',
+    lean: true,
+    leanWithId: false,
+  });
+  Object.assign(result,{
+    ...withPageRange(result,{prelink:'/?page=pageTpl'})
+  })
+   const {t,isCN}=res.locals
+  if(isCN){
+    result.docs=result.docs.map(video =>{
+      const isHanime=video.site == 'hanime'
+      if(isHanime) return video
+      return {
+        ...video,
+        title:t(video.title),
+        keywords:t(video.title),
+        desc:t(video.desc),
+      }
+    })
+  }
+  if(req.query.ajax){
+       return  res.send( result);
+   }
+  return res.render('boot', result);
+});

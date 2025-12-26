@@ -25,6 +25,7 @@ const javsSchema = new mongoose.Schema({
   disable:{type:Number,default:0},
   source:{type:String,default:''},
   actor:{type:Array,default:[]},
+  hot: { type: Number, default: 0 },
 });
 javsSchema.index({ path: -1 });
 javsSchema.index({ title: -1 });
@@ -36,7 +37,7 @@ javsSchema.index({ cat: -1 });
 javsSchema.index({ vipView: -1 });
 javsSchema.index({ tag: -1 });
 javsSchema.index({ disable: -1 });
-
+javsSchema.index({ hot: -1, date: -1 });
 javsSchema.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('javs', javsSchema);

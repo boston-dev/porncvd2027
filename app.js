@@ -34,7 +34,6 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(compression());
-
 /** Body limits (avoid abuse) */
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: true, limit: '200kb' }));

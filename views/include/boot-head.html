@@ -39,7 +39,7 @@
                             if(item.href){
                             %>
                             <li class="nav-list"><a class="js-nav-head "
-                                target="_blank" 
+                                target="<%=item.target?item.target : '_self' %>" 
                                 href="<%=basePath%><%=item.href%>"
                                 ><%=item.text%></a></li>
                             <%
@@ -92,7 +92,7 @@
                             if(item.href){
                             %>
                             <li class="nav-list"><a class="js-nav-head mr-1"
-                                target="_blank" 
+                                target="<%=item.target?item.target : '_self' %>" 
                                 href="<%=basePath%><%=item.href%>"
                                 >
                                 <span class="iconicfill-hash text-danger "></span><%=item.text%>
