@@ -6,16 +6,36 @@ const renderFallback = require('../utils/renderFallback');
 const OpenCC = require('opencc-js')
 const toTwp = OpenCC.Converter({ from: 'cn', to: 'twp' })
 const Jav = require('../models/Jav');
-
+const OldUrlMap = require('../models/OldUrlMap');
 /**
  * 线上一致：字段不改、集合不改、分页使用 mongoose-paginate-v2
  * 视图模板：继续用你线上 porncvd.com 的 ejs（home/search/tag/cat/nice/boot 等）
  */
-
 function escReg(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
+   const slectConfig= {
+    _id:1,
+      url: 1,
+      keywords: 1,
+      desc: 1,
+      title: 1,
+      source: 1,
+      img: 1,
+      tag: 1,
+      site: 1,
+      disable: 1,
+      title_en: 1,
+      keywords_en: 1,
+      desc_en: 1,
+      cat: 1,
+      date: 1,
+      id: 1,
+      path: 1,
+      vipView: 1,
+      actor: 1,
+      type: 1,
+    } 
 exports.home = asyncHandler(async (req, res) => {
   const {siteArr}=res.locals
   // 首页：最新
@@ -208,6 +228,17 @@ exports.genre = asyncHandler(async (req, res) => {
   });
   return res.render('boot', result);
 });
+// 随机取一个“可播放”的视频（你按自己字段改筛选条件）
+async function pickOnePlayableVideo(site) {
+  const match = { };
+  const [doc] = await Jav.aggregate([
+    { $match: match },
+    { $sample: { size: 1 } },
+    { $project: slectConfig }
+  ]);
+  console.log(doc)
+  return doc
+}
 /**
  * Detail: strongest stability.
  * - detail limiter
@@ -220,38 +251,39 @@ exports.detail = [
     if (req.url.includes('/javs/realte.html')) return res.redirect('/');
 
     const raw = req.params.id || '';
-    const id = raw.replace(/\.html$/i, '');
+    let id = raw.replace(/\.html$/i, '');
     const {t,isCN}=res.locals
     // ✅ fast ObjectId regex validation
     if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
       return res.redirect('/')
      // return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
-      
-    const video = await Jav.findById(id).select({
-      url: 1,
-      keywords: 1,
-      desc: 1,
-      title: 1,
-      source: 1,
-      img: 1,
-      tag: 1,
-      site: 1,
-      disable: 1,
-      title_en: 1,
-      keywords_en: 1,
-      desc_en: 1,
-      cat: 1,
-      date: 1,
-      id: 1,
-      path: 1,
-      vipView: 1,
-      actor: 1,
-      type: 1,
-    }).lean();
+ 
+    let video = await Jav.findById(id).select(slectConfig).lean();
 
-    if (!video || video.disable === 1) {
-      return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
+    if (!video) {
+      const oldId=id
+      const findQuery={ oldId }
+      let map = await OldUrlMap.findOne(findQuery).lean();
+      if (!map) {
+        const picked = await pickOnePlayableVideo();
+        // 用 upsert 防并发：同一个 oldId 只会插入一次
+        await OldUrlMap.findOneAndUpdate(
+          { oldId },
+          {
+            $setOnInsert: {
+              oldId,
+              newId: picked._id,
+            },
+          },
+          { upsert: true, new: true }
+        );
+        video=picked
+      }else{
+         video = await Jav.findById(map.newId).lean();
+      }
+      //return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
+      //随机取出16个数据，第一个当做 播放视频详情，其他当做推荐
     }
     const isHanime=video.site == 'hanime'
     if(isHanime){
