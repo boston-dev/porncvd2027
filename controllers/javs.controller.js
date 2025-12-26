@@ -34,6 +34,8 @@ function escReg(s) {
       vipView: 1,
       actor: 1,
       type: 1,
+      content:1,
+      link:1
     } 
 exports.home = asyncHandler(async (req, res) => {
   // 首页：最新
@@ -197,7 +199,8 @@ exports.detail = [
     if (req.url.includes('/javs/realte.html')) return res.redirect('/');
 
     const raw = req.params.id || '';
-    let id = raw.replace(/\.html$/i, '');
+    let id = raw?.replace(/\.html$/i, '');
+    console.log(id,'----------------')
     const {t,isCN}=res.locals
     // ✅ fast ObjectId regex validation
     if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {

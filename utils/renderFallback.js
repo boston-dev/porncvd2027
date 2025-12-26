@@ -26,7 +26,6 @@ module.exports = async function renderFallback(req, res, opts = {}) {
       { $sample: { size: limit } },
       { $project: { title: 1, img: 1, site: 1, tag: 1, date: 1,source:1  } },
     ]);
-    console.log(docs)
     // 2) 不足就全站随机补齐
     if (docs.length < limit) {
       const need = limit - docs.length;
