@@ -55,18 +55,27 @@ app.use( async (req,res,next) => {
 
   res.locals.siteArr=['hanime']
    res.locals.gNav=gNav
-   if(res.locals.isCN){
-    res.locals.gNav=res.locals.gNav.map(v =>{
-      if(v.text){
-        return {
-          ...v,
-          text:toCN(v.text)
-        }
-      }else{
-         return toCN(v)
+  
+   res.locals.t = (s) => {
+      // 不是中文环境，原样返回
+      if (!res.locals.isCN) return s;
+
+      // 1️⃣ 纯字符串
+      if (typeof s === 'string') {
+        return toCN(s);
       }
-    })
-   }
+
+      // 2️⃣ 对象，且有 text 字段
+      if (s && typeof s === 'object' && typeof s.text === 'string') {
+        return {
+          ...s,
+          text: toCN(s.text)
+        };
+      }
+
+      // 3️⃣ 其他情况（数字、null、undefined、奇怪对象）
+      return s;
+    };
    res.locals.frends=[]
    res.locals.curSite=''
    res.locals.tplLang=''

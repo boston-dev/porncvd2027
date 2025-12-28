@@ -41,14 +41,14 @@
                             <li class="nav-list"><a class="js-nav-head "
                                 target="<%=item.target?item.target : '_self' %>" 
                                 href="<%=basePath%><%=item.href%>"
-                                ><%=item.text%></a></li>
+                                ><%=t(item.text)%></a></li>
                             <%
                             }else{
                             %>
                             <li class="nav-list"><a class="js-nav-head "
     
                                 href="<%=basePath%>/cat/<%=item%>/<%=curSite ? `?site=${curSite}` : ''%>"
-                                ><%=item%></a></li>
+                                ><%=t(item)%></a></li>
                             <%
                             }
                             %>
@@ -67,11 +67,11 @@
         <%if(curSite !='hanime'){%>
         <div class="lang-switch" basePath="<%=basePath%>">
               <%if(isCN){%>
-              <a href="javascript:;" class="lang-btn active">简体</a>      
+              <a href="javascript:;" class="lang-btn active">中文:简体</a>      
               <%
                 }else{
                 %>
-                <a href="javascript:;" class="lang-btn active">繁體</a>
+                <a href="javascript:;" class="lang-btn active">中文:繁體</a>
              <%
             }
             %> 
@@ -95,7 +95,7 @@
                                 target="<%=item.target?item.target : '_self' %>" 
                                 href="<%=basePath%><%=item.href%>"
                                 >
-                                <span class="iconicfill-hash text-danger "></span><%=item.text%>
+                                <span class="iconicfill-hash text-danger "></span><%=t(item.text)%>
                             </a></li>
                             <%
                             }else{
@@ -104,7 +104,7 @@
     
                                 href="<%=basePath%>/cat/<%=item%>/"
                                 >
-                                <span class="iconicfill-hash text-danger "></span><%=item%>
+                                <span class="iconicfill-hash text-danger "></span><%=t(item)%>
                             </a></li>
                             <%
                             }
@@ -134,6 +134,12 @@
 <div class="container container-content no-cate-container-content" >
     <div class="main mobile-main">
          <%- include pic.html%>
+         <div class="hot-wrap">
+             <div class="hot-tags">
+                    <a class="hot-tag" href="https://porncvd.com/javs/6940ec83f9bea083aa04d669.html">[Custom Udon] 眠った子</a>
+                    <a class="hot-tag" href="https://porncvd.com/javs/67fa0e16f01ca78acfec6b7c.html"><%=t('豪放獅子女Jenny')%></a>
+            </div>
+        </div>
         <section>
 
             <!--            <div class="list-title mobile-list-title mt-3">-->

@@ -4,7 +4,7 @@ const Jav = require('../models/Jav');
 
 module.exports = async function renderFallback(req, res, opts = {}) {
   const {
-    status = 404,
+    status = 200,
     view = 'boot',
     limit = 16,
     message = '',
