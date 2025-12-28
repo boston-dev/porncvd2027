@@ -273,7 +273,7 @@ exports.models = [
     }).lean();
 
     if (!video || video.disable === 1) {
-      return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
+      return renderFallback(req, res, { status: 200, view: 'boot', limit: 16 });
     }
     console.log(video.source,'--------------')    
         const pager = paginatePics(
