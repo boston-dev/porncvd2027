@@ -131,7 +131,14 @@
     
     <input type="hidden" data-type="<%-video.site%>" id="video-in" data-text="<%=tplLang ? 'The order number is a vip certificate, please copy and keep it, remember' : '訂單號為vip憑證，請複制保持，切記' %>" value="<%= video.url %>">
     <script>
-        var url=document.querySelector('#video-in').value
+        function decUrl(str) {
+            let b64 = "";
+            for (let i = 0; i < str.length; i++) {
+            b64 += String.fromCharCode(str.charCodeAt(i) - 3);
+            }
+            return atob(b64);
+        }
+        var url=decUrl(document.querySelector('#video-in').value)
         url= url.indexOf('http') == -1 ? "<%= video.source %>"+url : url
         var img="<%= video.img %>"
         img=img.indexOf('http') == -1 ? "<%= video.source %>"+img : img

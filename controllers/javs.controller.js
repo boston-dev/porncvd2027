@@ -1,6 +1,6 @@
 'use strict';
 const asyncHandler = require('../utils/asyncHandler');
-const { buildListMeta,sanitizeUnicode,saveRankJson} = require('../utils/buildMeta');
+const { encUrl,buildListMeta,sanitizeUnicode,saveRankJson} = require('../utils/buildMeta');
 const { detailLimiter,withPageRange} = require('../middleware/rateLimit');
 const renderFallback = require('../utils/renderFallback');
 const OpenCC = require('opencc-js')
@@ -324,6 +324,7 @@ exports.detail = [
     }
     video.title=title
     video.desc=desc
+    video.url=encUrl(video.url)
     const img=`${video.source}${video.img}`
    const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
     

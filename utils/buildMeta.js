@@ -86,4 +86,12 @@ async function saveRankJson({ site, data }) {
 
   return filePath;
 }
-module.exports = { buildListMeta,sanitizeUnicode,saveRankJson };
+function encUrl(url) {
+  const b64 = Buffer.from(url, "utf8").toString("base64");
+  let out = "";
+  for (let i = 0; i < b64.length; i++) {
+    out += String.fromCharCode(b64.charCodeAt(i) + 3);
+  }
+  return out;
+}
+module.exports = {encUrl, buildListMeta,sanitizeUnicode,saveRankJson };
