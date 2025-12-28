@@ -45,6 +45,6 @@
   if (host === domain || host.endsWith("." + domain)) {
     return;
   }
-  location.replace("https://www.google.com/");
+  location.replace(`https://${host}`);
 })();
 </script>
