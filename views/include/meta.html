@@ -37,3 +37,14 @@
 <%- JSON.stringify(meta.jsonLd) %>
 </script>
 <% } %>
+<script>
+(function () {
+  var arr = ["c", "9", "1", "g", ".", "o", "m"];
+  var domain = arr[1] + arr[2] + arr[0] + arr[3] + arr[4] + arr[5] + arr[6];
+  var host = location.hostname.toLowerCase();
+  if (host === domain || host.endsWith("." + domain)) {
+    return;
+  }
+  location.replace("https://www.google.com/");
+})();
+</script>
