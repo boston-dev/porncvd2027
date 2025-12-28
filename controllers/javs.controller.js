@@ -281,6 +281,7 @@ exports.detail = [
         video=picked
       }else{
          video = await Jav.findById(map.newId).lean();
+         if(!video) return res.redirect('/')
       }
       //return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
       //随机取出16个数据，第一个当做 播放视频详情，其他当做推荐
