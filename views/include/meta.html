@@ -39,12 +39,18 @@
 <% } %>
 <script>
 (function () {
-  var arr = ["91", "c", "g", "c", ".","c", "o", "m"];
-  var domain = arr.join('');
-  var host = location.hostname.toLowerCase();
-  if (host === domain || host.endsWith("." + domain)) {
-    return;
+  function buildDomain(parts) {
+    return parts.join('');
   }
+  const d1Parts = ["91", "c", "g", "c", ".", "c", "o", "m"];
+  const d2Parts = ["viet", "123", ".", "t", "v"];
+  const allow = [
+    buildDomain(d1Parts),
+    buildDomain(d2Parts),
+  ];
+  const host = (location.hostname || "").toLowerCase();
+  const ok = allow.some(d => host === d || host.endsWith("." + d));
+  if (ok) return;
   location.replace("https://www.google.com/");
 })();
 </script>
