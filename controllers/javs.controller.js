@@ -289,7 +289,7 @@ exports.detail = [
       //随机取出16个数据，第一个当做 播放视频详情，其他当做推荐
     }
     if(video.disable){
-      return renderFallback(req, res, { status: 404, view: '404', limit: 16 })
+      return renderFallback(req, res, { status: 410, view: '404', limit: 16 })
     }
     const isHanime=video.site == 'hanime'
     if(isHanime){
