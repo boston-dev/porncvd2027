@@ -55,7 +55,7 @@ app.use( async (req,res,next) => {
 
   res.locals.siteArr=['hanime']
    res.locals.gNav=gNav
-  
+  res.locals.isProd = process.env.NODE_ENV === 'production';
    res.locals.t = (s) => {
       // 不是中文环境，原样返回
       if (!res.locals.isCN) return s;

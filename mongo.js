@@ -11,12 +11,13 @@ const mongoose = require("mongoose");
 const { Types } = require("mongoose");
 // 你的模型路径按实际改
 const Jav = require("./models/Jav");
+const { disable } = require("./app");
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/downM3u8";
 
 // ✅ 把要处理的 URL / 页面路径 放这里
 const urls = [
-  "https://porncvd.com/javs/6943aeca0a2465cf16541775.html",
+  "https://porncvd.com/javs/694010f8902835b2f9f4ec54.html",
   "https://porncvd.com/javs/6943aebc0a2465cf1654165f.html",
   "https://porncvd.com/javs/6943b2e30a2465cf16545abf.html",
   "https://porncvd.com/javs/6943b2c30a2465cf1654585b.html"
@@ -49,7 +50,7 @@ async function main() {
   // 这里先按你 schema 里有 id:{type:String} 的习惯删
   const objectIds = ids.map(x => new Types.ObjectId(x));
   console.log(objectIds)
-  const res = await Jav.deleteMany({ _id: { $in: objectIds } });
+  const res = await Jav.updateMany({ _id: { $in: objectIds } },{disable:1});
 
   console.log("Delete result:", res);
   await mongoose.disconnect();

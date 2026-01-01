@@ -36,12 +36,13 @@ function escReg(s) {
       actor: 1,
       type: 1,
     } 
+const queryFirt= { disable: { $ne: 1 } };   
 exports.home = asyncHandler(async (req, res) => {
   const {siteArr}=res.locals
   // 首页：最新
    const page = Math.max(1, parseInt(req.query.page || '1', 10));
   const limit = 40;
-  const query = {site: { $nin: siteArr }};
+  const query = {site: { $nin: siteArr },...queryFirt};
 
   const result = await Jav.paginate(query, {
     page,
@@ -83,7 +84,7 @@ exports.search = asyncHandler(async (req, res) => {
  if(res.locals.isCN){
   qRaw=toTwp(qRaw)
  }
-  const query = { };
+  const query = { ...queryFirt};
   if (qRaw) {
     const reg = new RegExp(escReg(qRaw), 'i');
     query.$or = [
@@ -155,6 +156,7 @@ exports.tag = asyncHandler(async (req, res) => {
       ? { tag: { $in: optRegexp } }
       : {}; // 没关键词就不加条件，避免 $in: []
     let prelink = buildPrelinkByUrl(req);
+    Object.assign(query,queryFirt)
      if(site){
       res.locals.curSite=site
       Object.assign(query,{
@@ -204,7 +206,7 @@ exports.genre = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.params.p || '1', 10));
   const limit = 40;
   res.locals.curSite='hanime'
-    const query = {site:{$eq:'hanime'}}
+    const query = {site:{$eq:'hanime'},...queryFirt}
   const prelink=`/genre/pageTpl`
   const result = await Jav.paginate(query, {
     page,
@@ -285,6 +287,9 @@ exports.detail = [
       }
       //return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
       //随机取出16个数据，第一个当做 播放视频详情，其他当做推荐
+    }
+    if(video.disable){
+      return renderFallback(req, res, { status: 404, view: '404', limit: 16 })
     }
     const isHanime=video.site == 'hanime'
     if(isHanime){
