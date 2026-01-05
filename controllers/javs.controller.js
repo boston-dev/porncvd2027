@@ -274,7 +274,7 @@ exports.detail = [
       canonical: url,
 
       og: {
-        type: 'video.other',
+        type: 'video.movie',
         title,
         desc,
         image: img
@@ -288,7 +288,8 @@ exports.detail = [
         "description": desc,
         "thumbnailUrl":img,
         "uploadDate": uploadDate,
-        "embedUrl": url
+        "embedUrl": url,
+        "contentUrl": url,
       }
     }
     if (req.query.ajax) return res.send(fentData);
