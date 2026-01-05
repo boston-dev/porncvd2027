@@ -1,25 +1,31 @@
 /**
- * seo.controller.js (fixed)
- * 目标：让 Google Search Console 能稳定抓取 sitemap（包含 .xml 与 .xml.gz 两种格式）
+ * seo.controller.js (optimized, stable for Google sitemap fetch)
  *
- * 关键修复：
- * 1) 不再给 sitemap 响应加 X-Robots-Tag: noindex（原文件会加，可能引起抓取/解析异常）
- * 2) 同时支持 /sitemap*.xml 以及 /sitemap*.xml.gz（你可以改 index 里用 .xml，老的 .gz 也兼容）
- * 3) 更严格的分片参数校验，避免 params 被路由吞掉导致 shard 解析异常
- * 4) 响应头更标准：Vary: Accept-Encoding，Content-Type 保持 XML
+ * 目标：
+ * - sitemap 永远稳定 200/404（分片超出返回 404）
+ * - /sitemap*.xml 与 /sitemap*.xml.gz 都可用（仅 .gz 才 gzip）
+ * - 统一 XML 响应头（Content-Type / Cache-Control / Vary）
+ * - 避免缓存 key 串台（特别是 tag sitemap）
+ * - 分类 sitemap 也走统一 sendXml（避免 GSC 判定异常）
  *
  * 路由建议（Express）：
  *   router.get('/robots.txt', seo.robots);
  *   router.get(['/sitemap.xml', '/sitemap.xml.gz'], seo.sitemapIndex);
- *   router.get(['/sitemap-javs-:shard(\\d+)\\.xml', '/sitemap-javs-:shard(\\d+)\\.xml\\.gz'], seo.sitemapJavsShard);
+ *   router.get(
+ *     ['/sitemap-javs-:shard(\\d+)\\.xml', '/sitemap-javs-:shard(\\d+)\\.xml\\.gz'],
+ *     seo.sitemapJavsShard
+ *   );
  *   router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTag);
  *   router.get(['/sitemap-cat.xml', '/sitemap-cat.xml.gz'], seo.sitemapCat);
  */
 
 const zlib = require('zlib');
-const Jav = require('../models/Jav'); // TODO：改成你真实路径
+const Jav = require('../models/Jav'); // ✅ 确认你的真实路径
+const navs = require('../nav.json');
 
-const SITEMAP_PAGE_SIZE = Number(process.env.SITEMAP_PAGE_SIZE || 20000);
+// ✅ 实战更稳：默认 5000（你也可以通过 .env 覆盖）
+// 成人站/大站建议：3000~8000；避免单个 sitemap 过大导致 GSC 失败后长期标红
+const SITEMAP_PAGE_SIZE = Number(process.env.SITEMAP_PAGE_SIZE || 5000);
 const SITEMAP_TTL_MS = Number(process.env.SITEMAP_TTL_MS || 10 * 60 * 1000);
 
 // ------------------------------
@@ -35,21 +41,7 @@ function parseJsonArray(v) {
   }
 }
 
-const DEFAULT_FIXED_CATS = [
-  "今日吃瓜",
-  "每日大瓜",
-  "热门大瓜",
-  "必看大瓜",
-  "网红黑料",
-  "学生校园",
-  "明星黑料",
-  "领导干部",
-  "海外吃瓜",
-  "内涵段子",
-  "人人吃瓜",
-  "吃瓜新闻",
-  "看片娱乐",
-];
+const DEFAULT_FIXED_CATS = require('../nav.json')
 
 // 通过环境变量固定分类（可选）
 // 例：CAT_FIXED='["今日吃瓜","每日大瓜"]'
@@ -67,12 +59,11 @@ function getFixedCats() {
   return DEFAULT_FIXED_CATS.slice();
 }
 
-async function hasCatData(site, catField) {
+async function hasCatData(catField) {
   const fixed = getFixedCats();
   if (fixed) return fixed.length > 0;
 
   // 轻量判断：是否存在任何一条带 catField 的数据（无需 distinct）
-  // 注意：catField 可能是 string / array，只要存在且非 null 即认为有分类
   const exists = await Jav.exists({ disable: { $ne: 1 }, [catField]: { $exists: true, $ne: null } });
   return !!exists;
 }
@@ -111,25 +102,20 @@ function gzipBuf(xml) {
   return zlib.gzipSync(Buffer.from(xml), { level: 6 });
 }
 
+// ✅ 仅当 .gz 或 ?gz=1 才 gzip（避免双 gzip / 头部不一致）
 function wantsGzip(req) {
-  // 1) 明确走 .gz 结尾
   if ((req.path || '').toLowerCase().endsWith('.gz')) return true;
-  // 2) 也可以用 ?gz=1 强制
   if (String(req.query.gz || '') === '1') return true;
   return false;
 }
 
 function setXmlHeaders(res, isGz) {
-  // sitemap 本质是 XML
   res.set('Content-Type', 'application/xml; charset=utf-8');
   res.set('Cache-Control', 'public, max-age=600, s-maxage=600');
   res.set('Vary', 'Accept-Encoding');
 
-  if (isGz) {
-    res.set('Content-Encoding', 'gzip');
-  } else {
-    res.removeHeader('Content-Encoding');
-  }
+  if (isGz) res.set('Content-Encoding', 'gzip');
+  else res.removeHeader('Content-Encoding');
 }
 
 function sendXml(res, xml, isGz) {
@@ -138,7 +124,9 @@ function sendXml(res, xml, isGz) {
   return res.send(xml);
 }
 
+// ------------------------------
 // robots.txt
+// ------------------------------
 exports.robots = async (req, res) => {
   const site = getSiteUrl(req);
   res.type('text/plain; charset=utf-8');
@@ -149,7 +137,9 @@ Sitemap: ${site}/sitemap.xml
 `);
 };
 
-// ✅ sitemap index：同时支持 /sitemap.xml 与 /sitemap.xml.gz（由请求决定是否 gzip）
+// ------------------------------
+// sitemap index
+// ------------------------------
 exports.sitemapIndex = async (req, res) => {
   const site = getSiteUrl(req);
   const key = `smi:${site}`;
@@ -160,17 +150,19 @@ exports.sitemapIndex = async (req, res) => {
     const pages = Math.max(1, Math.ceil(total / SITEMAP_PAGE_SIZE));
     const now = new Date().toISOString();
 
-    // ✅ 建议在 index 里用 .xml（最稳），但 .xml.gz 也兼容（Google 支持）
+    // ✅ index 里用 .xml（最稳），.xml.gz 也支持但不建议写在 index
     const shardLoc = (i) => `${site}/sitemap-javs-${i}.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
+
     const catField = process.env.CAT_FIELD || 'cat';
-    const includeCat = await hasCatData(site, catField);
+    const includeCat = await hasCatData(catField);
 
     let items = '';
     for (let i = 1; i <= pages; i++) {
       items += `<sitemap><loc>${shardLoc(i)}</loc><lastmod>${now}</lastmod></sitemap>`;
     }
+    // 你如果决定删 tag sitemap，这里直接注释掉这一行即可
     items += `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
     if (includeCat) items += `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
 
@@ -183,12 +175,14 @@ ${items}
   return sendXml(res, xml, isGz);
 };
 
-// ✅ javs 分片：/sitemap-javs-1.xml 或 /sitemap-javs-1.xml.gz
+// ------------------------------
+// javs shard sitemap
+// ------------------------------
 exports.sitemapJavsShard = async (req, res) => {
   const site = getSiteUrl(req);
   const isGz = wantsGzip(req);
 
-  // 强制数字分片（路由没加正则时也能兜底）
+  // ✅ 强制数字分片（路由没加正则时也能兜底）
   const shardRaw = String(req.params.shard || '1');
   const shard = Math.max(1, parseInt(shardRaw.replace(/\D+/g, '') || '1', 10));
 
@@ -225,11 +219,15 @@ ${urls}
   return sendXml(res, xml, isGz);
 };
 
-// ✅ tag sitemap：/sitemap-tag.xml 或 /sitemap-tag.xml.gz
+// ------------------------------
+// tag sitemap
+// ------------------------------
 exports.sitemapTag = async (req, res) => {
   const site = getSiteUrl(req);
   const isGz = wantsGzip(req);
-  const key = `smt:${site}`;
+
+  // ✅ 关键：避免和其它 sitemap 串缓存（原来是 `smt:${site}`）
+  const key = `smt:tag:${site}`;
 
   const xml = await cached(key, SITEMAP_TTL_MS, async () => {
     const agg = await Jav.aggregate([
@@ -259,33 +257,36 @@ ${urls}
 
   return sendXml(res, xml, isGz);
 };
-const navs=require('../nav.json')
+
+// ------------------------------
+// cat sitemap (unified headers + gzip + cache)
+// ------------------------------
 exports.sitemapCat = async (req, res) => {
-  const site = process.env.SITE_URL || `https://${req.hostname}`;
+  const site = getSiteUrl(req);
+  const isGz = wantsGzip(req);
+  const key = `smc:${site}`;
 
-  const cats = navs;
+  // ✅ cats 来源：nav.json；如果你有 CAT_FIXED，也可以切换成 getFixedCats()
+  const cats = Array.isArray(navs) ? navs : [];
 
-  // 如果你哪天想“不输出分类 sitemap”
-  if (!cats.length) {
-    return res.status(404).end();
-  }
+  if (!cats.length) return res.status(404).send('not found');
 
-  const urls = cats.map(name => {
-    const enc = encodeURIComponent(name);
-    return `
-      <url>
-        <loc>${site}/cat/${enc}/</loc>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-      </url>
-    `;
-  }).join('');
+  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
+    const today = ymd(new Date());
+    const urls = cats
+      .filter((name) => typeof name === 'string' && name.trim() !== '')
+      .map((name) => {
+        const enc = encodeURIComponent(name.trim());
+        // changefreq/priority 在 sitemap 协议允许（可选），保留也行
+        return `<url><loc>${site}/cat/${enc}/</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>`;
+      })
+      .join('');
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
+  });
 
-  res.set('Content-Type', 'application/xml; charset=utf-8');
-  res.send(xml);
+  return sendXml(res, xml, isGz);
 };
