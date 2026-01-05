@@ -339,7 +339,7 @@ exports.detail = [
       desc,
       canonical: url,
       og: {
-        type: 'video.other',
+        type: 'video.movie',
         title,
         desc,
         image: img
@@ -353,7 +353,8 @@ exports.detail = [
         "description":desc,
         "thumbnailUrl":img,
         "uploadDate": uploadDate,
-        "embedUrl": url
+        "embedUrl": url,
+        "contentUrl": url,
       }
     }
     const fentData={ video,docs}
