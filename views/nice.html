@@ -139,25 +139,54 @@
         img=img.indexOf('http') == -1 ? "<%= video.source %>"+img : img
         var types= $('#video-in').attr('data-type')
         var time=0
+        var isHls = types === 'm3u8' || /\.m3u8(\?|$)/i.test(url)
+        
         var dp = new DPlayer({
-            container: document.getElementById('dplayer'),
-            autoplay: false,
-            theme: '#FADFA3',
-            loop: true,
-            lang: 'zh-cn',
-            screenshot: true,
-            hotkey: true,
-            preload: 'auto',
-            /*logo: '/favicon.ico',*/
-            volume: 0.7,
-            mutex: true,
-            video: {
-                url:url,
-                pic:img,
-                thumbnails:img,
-                type: 'auto',
-            },
-        });
+  container: document.getElementById('dplayer'),
+  autoplay: false,
+  theme: '#FDAF3A',
+  loop: true,
+  lang: 'zh-cn',
+  screenshot: true,
+  hotkey: true,
+  preload: 'auto',
+  volume: 0.7,
+  mutex: true,
+  video: {
+    url: url,
+    pic: img,
+    thumbnails: img,
+    // 关键：m3u8 走 hls.js
+    type: isHls ? 'customHls' : 'auto',
+    customType: isHls ? {
+      customHls: function (video, player) {
+        if (window.Hls && Hls.isSupported()) {
+          // 清理旧实例（防止切换视频内存泄露）
+          if (video._hls) {
+            video._hls.destroy()
+            video._hls = null
+          }
+          var hls = new Hls({
+            // 需要的话再开，先保持默认最稳
+            // lowLatencyMode: false,
+          })
+          video._hls = hls
+          hls.loadSource(video.src)
+          hls.attachMedia(video)
+
+          hls.on(Hls.Events.ERROR, function (event, data) {
+            console.log('HLS error:', data)
+          })
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          // Safari 原生支持
+          video.src = video.src
+        } else {
+          console.log('This browser does not support HLS.')
+        }
+      }
+    } : undefined
+  }
+})
     </script>
 </div>
 
