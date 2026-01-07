@@ -1,27 +1,59 @@
 /**
- * seo.controller.js (fixed)
- * 目标：让 Google Search Console 能稳定抓取 sitemap（包含 .xml 与 .xml.gz 两种格式）
+ * seo.controller.js (DMCA-hardened + SEO-balanced)
  *
- * 关键修复：
- * 1) 不再给 sitemap 响应加 X-Robots-Tag: noindex（原文件会加，可能引起抓取/解析异常）
- * 2) 同时支持 /sitemap*.xml 以及 /sitemap*.xml.gz（你可以改 index 里用 .xml，老的 .gz 也兼容）
- * 3) 更严格的分片参数校验，避免 params 被路由吞掉导致 shard 解析异常
- * 4) 响应头更标准：Vary: Accept-Encoding，Content-Type 保持 XML
+ * 目标：
+ * - 避免 sitemap 暴露全量详情页清单（版权方脚本最爱）
+ * - 仍然给 Google 足够的“发现入口”：分类/Top标签 + 最近更新 + 随机子集
+ *
+ * 默认策略（推荐）：
+ * - /sitemap.xml 仅包含 3 个 sitemap：
+ *    1) /sitemap-javs.xml   (最近更新 RECENT + 随机 RANDOM，总数 TOTAL)
+ *    2) /sitemap-tag.xml    (Top 标签 TOP_N)
+ *    3) /sitemap-cat.xml
+ * - 旧版 /sitemap-javs-:shard.xml 默认关闭（ALLOW_SHARDED_SITEMAP=0）
  *
  * 路由建议（Express）：
  *   router.get('/robots.txt', seo.robots);
  *   router.get(['/sitemap.xml', '/sitemap.xml.gz'], seo.sitemapIndex);
- *   router.get(['/sitemap-javs-:shard(\\d+)\\.xml', '/sitemap-javs-:shard(\\d+)\\.xml\\.gz'], seo.sitemapJavsShard);
- *   router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTag);
+ *   router.get(['/sitemap-javs.xml', '/sitemap-javs.xml.gz'], seo.sitemapJavsMix);
+ *   router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTagTop);
  *   router.get(['/sitemap-cat.xml', '/sitemap-cat.xml.gz'], seo.sitemapCat);
+ *   // 旧接口（默认关闭）
+ *   router.get(['/sitemap-javs-:shard(\\d+)\\.xml', '/sitemap-javs-:shard(\\d+)\\.xml\\.gz'], seo.sitemapJavsShard);
  */
 
 const zlib = require('zlib');
-const Jav = require('../models/Jav'); // TODO：改成你真实路径
+const Jav = require('../models/Jav');
 
-const SITEMAP_PAGE_SIZE = Number(process.env.SITEMAP_PAGE_SIZE || 20000);
+const navs = require('../nav.json');
+let genreNav = require('../genreNav.json');
+genreNav = genreNav.map((v) => `/cat/${encodeURIComponent(v)}/?site=hanime`);
+
+// =======================
+// 可配置参数（环境变量）
+// =======================
 const SITEMAP_TTL_MS = Number(process.env.SITEMAP_TTL_MS || 10 * 60 * 1000);
 
+// 详情 sitemap：混合策略（推荐）
+const SITEMAP_JAVS_TOTAL = Number(process.env.SITEMAP_JAVS_TOTAL || 5000);
+const SITEMAP_JAVS_RECENT = Number(process.env.SITEMAP_JAVS_RECENT || 2000);
+const SITEMAP_JAVS_RANDOM = Number(process.env.SITEMAP_JAVS_RANDOM || (SITEMAP_JAVS_TOTAL - SITEMAP_JAVS_RECENT));
+
+// 详情/标签 sitemap 的缓存（建议 1 天：86400000）
+const SITEMAP_JAVS_TTL_MS = Number(process.env.SITEMAP_JAVS_TTL_MS || 24 * 60 * 60 * 1000);
+const SITEMAP_TAG_TTL_MS = Number(process.env.SITEMAP_TAG_TTL_MS || 24 * 60 * 60 * 1000);
+
+// tag sitemap：只输出 Top 标签（按出现次数 cnt 排序）
+const SITEMAP_TAG_TOP = Number(process.env.SITEMAP_TAG_TOP || 5000);
+
+// 是否允许旧版 shard（强烈建议默认 0）
+const ALLOW_SHARDED_SITEMAP = String(process.env.ALLOW_SHARDED_SITEMAP || '0') === '1';
+const MAX_SHARDS = Number(process.env.SITEMAP_MAX_SHARDS || 3);
+const SHARD_SIZE = Number(process.env.SITEMAP_SHARD_SIZE || 5000); // 即使开启 shard，也限制每片只返回随机 N
+
+// =======================
+// 简单内存缓存
+// =======================
 const cache = new Map();
 async function cached(key, ttl, fn) {
   const now = Date.now();
@@ -32,6 +64,9 @@ async function cached(key, ttl, fn) {
   return val;
 }
 
+// =======================
+// 工具函数
+// =======================
 function getSiteUrl(req) {
   const fixed = process.env.SITE_URL;
   if (fixed) return fixed.replace(/\/+$/, '');
@@ -39,7 +74,6 @@ function getSiteUrl(req) {
   const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https')
     .split(',')[0]
     .trim();
-
   const host = (req.headers['x-forwarded-host'] || req.headers.host || '')
     .split(',')[0]
     .trim();
@@ -57,24 +91,18 @@ function gzipBuf(xml) {
 }
 
 function wantsGzip(req) {
-  // 1) 明确走 .gz 结尾
   if ((req.path || '').toLowerCase().endsWith('.gz')) return true;
-  // 2) 也可以用 ?gz=1 强制
   if (String(req.query.gz || '') === '1') return true;
-  return false;
+  const ae = String(req.headers['accept-encoding'] || '');
+  return ae.includes('gzip');
 }
 
 function setXmlHeaders(res, isGz) {
-  // sitemap 本质是 XML
   res.set('Content-Type', 'application/xml; charset=utf-8');
   res.set('Cache-Control', 'public, max-age=600, s-maxage=600');
   res.set('Vary', 'Accept-Encoding');
-
-  if (isGz) {
-    res.set('Content-Encoding', 'gzip');
-  } else {
-    res.removeHeader('Content-Encoding');
-  }
+  if (isGz) res.set('Content-Encoding', 'gzip');
+  else res.removeHeader('Content-Encoding');
 }
 
 function sendXml(res, xml, isGz) {
@@ -83,7 +111,9 @@ function sendXml(res, xml, isGz) {
   return res.send(xml);
 }
 
+// =======================
 // robots.txt
+// =======================
 exports.robots = async (req, res) => {
   const site = getSiteUrl(req);
   res.type('text/plain; charset=utf-8');
@@ -94,28 +124,25 @@ Sitemap: ${site}/sitemap.xml
 `);
 };
 
-// ✅ sitemap index：同时支持 /sitemap.xml 与 /sitemap.xml.gz（由请求决定是否 gzip）
+// =======================
+// 1) sitemap index（只暴露 3 个入口）
+// =======================
 exports.sitemapIndex = async (req, res) => {
   const site = getSiteUrl(req);
-  const key = `smi:${site}`;
   const isGz = wantsGzip(req);
+  const key = `smi:${site}`;
 
   const xml = await cached(key, SITEMAP_TTL_MS, async () => {
-    const total = await Jav.countDocuments({ disable: { $ne: 1 } });
-    const pages = Math.max(1, Math.ceil(total / SITEMAP_PAGE_SIZE));
     const now = new Date().toISOString();
 
-    // ✅ 建议在 index 里用 .xml（最稳），但 .xml.gz 也兼容（Google 支持）
-    const shardLoc = (i) => `${site}/sitemap-javs-${i}.xml`;
+    const javsLoc = `${site}/sitemap-javs.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
 
-    let items = '';
-    for (let i = 1; i <= pages; i++) {
-      items += `<sitemap><loc>${shardLoc(i)}</loc><lastmod>${now}</lastmod></sitemap>`;
-    }
-    items += `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
-    items += `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
+    const items =
+      `<sitemap><loc>${javsLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
+      `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
+      `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -126,35 +153,75 @@ ${items}
   return sendXml(res, xml, isGz);
 };
 
-// ✅ javs 分片：/sitemap-javs-1.xml 或 /sitemap-javs-1.xml.gz
-exports.sitemapJavsShard = async (req, res) => {
+// =======================
+// 2) 详情 sitemap：最近更新 + 随机（混合）
+//    - 既照顾新内容收录，又避免全量清单被扫
+// =======================
+exports.sitemapJavsMix = async (req, res) => {
   const site = getSiteUrl(req);
   const isGz = wantsGzip(req);
 
-  // 强制数字分片（路由没加正则时也能兜底）
-  const shardRaw = String(req.params.shard || '1');
-  const shard = Math.max(1, parseInt(shardRaw.replace(/\D+/g, '') || '1', 10));
+  // 防止配错：确保 RANDOM >= 0
+  const RECENT = Math.max(0, Math.min(SITEMAP_JAVS_RECENT, SITEMAP_JAVS_TOTAL));
+  const RANDOM = Math.max(0, Math.min(SITEMAP_JAVS_RANDOM, SITEMAP_JAVS_TOTAL - RECENT));
+  const TOTAL = RECENT + RANDOM;
 
-  const key = `smj:${site}:${shard}`;
+  const key = `smj:mix:${site}:t${TOTAL}:r${RECENT}:x${RANDOM}`;
 
-  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
-    const total = await Jav.countDocuments({ disable: { $ne: 1 } });
-    const pages = Math.max(1, Math.ceil(total / SITEMAP_PAGE_SIZE));
-    if (shard > pages) return null;
+  const xml = await cached(key, SITEMAP_JAVS_TTL_MS, async () => {
+    // 最近更新 RECENT
+    let recentDocs = [];
+    if (RECENT > 0) {
+      recentDocs = await Jav.find({ disable: { $ne: 1 } })
+        .sort({ updatedAt: -1, date: -1, _id: -1 })
+        .select({ _id: 1, updatedAt: 1, date: 1 })
+        .limit(RECENT)
+        .lean();
+    }
 
-    const skip = (shard - 1) * SITEMAP_PAGE_SIZE;
+    // 随机 RANDOM（MongoDB 端随机）
+    let randomDocs = [];
+    if (RANDOM > 0) {
+      randomDocs = await Jav.aggregate([
+        { $match: { disable: { $ne: 1 } } },
+        { $sample: { size: RANDOM } },
+        { $project: { _id: 1, updatedAt: 1, date: 1 } },
+      ]);
+    }
 
-    const docs = await Jav.find({ disable: { $ne: 1 } })
-      .sort({ updatedAt: -1, date: -1, _id: -1 })
-      .skip(skip)
-      .limit(SITEMAP_PAGE_SIZE)
-      .select({ _id: 1, updatedAt: 1, date: 1 })
-      .lean();
+    // 合并去重（避免 recent 与 random 重叠）
+    const seen = new Set();
+    const merged = [];
 
-    const urls = docs
+    for (const d of recentDocs) {
+      const id = String(d._id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      merged.push(d);
+    }
+    for (const d of randomDocs) {
+      const id = String(d._id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      merged.push(d);
+    }
+
+    // 如果去重后 < TOTAL，用最近更新补齐（尽量不再额外 random，降低波动）
+    if (merged.length < TOTAL) {
+      const need = TOTAL - merged.length;
+      const filler = await Jav.find({ disable: { $ne: 1 }, _id: { $nin: Array.from(seen) } })
+        .sort({ updatedAt: -1, date: -1, _id: -1 })
+        .select({ _id: 1, updatedAt: 1, date: 1 })
+        .limit(need)
+        .lean();
+      for (const d of filler) merged.push(d);
+    }
+
+    const urls = merged
+      .slice(0, TOTAL)
       .map((d) => {
-        const lastmod = ymd(d.updatedAt || d.date);
-        return `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${lastmod}</lastmod></url>`;
+        const u = d.updatedAt || d.date;
+        return `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${ymd(u)}</lastmod></url>`;
       })
       .join('');
 
@@ -164,33 +231,49 @@ ${urls}
 </urlset>`;
   });
 
-  if (!xml) return res.status(404).send('not found');
   return sendXml(res, xml, isGz);
 };
 
-// ✅ tag sitemap：/sitemap-tag.xml 或 /sitemap-tag.xml.gz
-exports.sitemapTag = async (req, res) => {
+// =======================
+// 3) tag sitemap：只输出 Top 标签（按 cnt 倒序）
+//    - 把“长尾 tag 清单”从 sitemap 移除，降低被脚本顺藤摸瓜
+// =======================
+exports.sitemapTagTop = async (req, res) => {
   const site = getSiteUrl(req);
   const isGz = wantsGzip(req);
-  const key = `smt:${site}`;
+  const TOP = Math.max(0, SITEMAP_TAG_TOP);
 
-  const xml = await cached(key, SITEMAP_TTL_MS, async () => {
-    const agg = await Jav.aggregate([
+  const key = `smt:top:${site}:${TOP}`;
+
+  const xml = await cached(key, SITEMAP_TAG_TTL_MS, async () => {
+    if (TOP === 0) {
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`;
+    }
+
+    let agg = await Jav.aggregate([
       { $match: { disable: { $ne: 1 }, tag: { $exists: true, $ne: null } } },
-      { $project: { tag: 1, u: { $ifNull: ['$updatedAt', '$date'] } } },
-      { $project: { tags: { $cond: [{ $isArray: '$tag' }, '$tag', ['$tag']] }, u: 1 } },
+      { $project: { tag: 1 } },
+      { $project: { tags: { $cond: [{ $isArray: '$tag' }, '$tag', ['$tag']] } } },
       { $unwind: '$tags' },
       { $match: { tags: { $type: 'string', $ne: '' } } },
-      { $group: { _id: '$tags', last: { $max: '$u' }, cnt: { $sum: 1 } } },
-      { $match: { cnt: { $gte: 1 } } },
-      { $sort: { last: -1 } },
-      { $limit: 50000 },
+      { $group: { _id: '$tags', cnt: { $sum: 1 } } },
+      { $sort: { cnt: -1 } },
+      { $limit: TOP },
     ]);
-
+     agg=agg.filter(v =>{
+       if(navs.find(d => v._id.includes(d))){
+         return false
+       }
+       return true
+     })
+    // tag sitemap 里的 lastmod：用“今天”即可（tag 页不是具体作品）
+    const today = ymd(new Date());
+    console.log(agg)
     const urls = agg
       .map((t) => {
         const name = encodeURIComponent(String(t._id));
-        return `<url><loc>${site}/tag/${name}/</loc><lastmod>${ymd(t.last)}</lastmod></url>`;
+        return `<url><loc>${site}/tag/${name}/</loc><lastmod>${today}</lastmod></url>`;
       })
       .join('');
 
@@ -203,67 +286,45 @@ ${urls}
   return sendXml(res, xml, isGz);
 };
 
-const navs=require('../nav.json')
-let genreNav=require('../genreNav.json')
-genreNav=genreNav.map(v => `/cat/${encodeURIComponent(v)}/?site=hanime`)
+// =======================
+// 4) 分类/栏目 sitemap（保留你原逻辑）
+// =======================
 exports.sitemapCat = async (req, res) => {
   const site = process.env.SITE_URL || `https://${req.hostname}`;
 
-  const catsRaw = [...navs] || []; // 你的 navs
+  const catsRaw = [...navs] || [];
   if (!Array.isArray(catsRaw) || catsRaw.length === 0) {
     return res.status(404).end();
   }
 
-  // 1) 统一成 { text, href }
   let cats = catsRaw
     .map((v) => {
-      // 字符串：当分类名
-      if (typeof v === "string") {
+      if (typeof v === 'string') {
         const name = v.trim();
         if (!name) return null;
-        return {
-          text: name,
-          href: `/cat/${encodeURIComponent(name)}/`,
-        };
+        return { text: name, href: `/cat/${encodeURIComponent(name)}/` };
       }
-
-      // 对象：支持 {text, href} 或 {name, href} 等
-      if (v && typeof v === "object") {
-        const text = String(v.text ?? v.name ?? "").trim();
-        const href = String(v.href ?? "").trim();
+      if (v && typeof v === 'object') {
+        const text = String(v.text ?? v.name ?? '').trim();
+        const href = String(v.href ?? '').trim();
         if (!text && !href) return null;
-
-        // 没 href 但有 text：也按分类名走
-        if (!href && text) {
-          return {
-            text,
-            href: `/cat/${encodeURIComponent(text)}/`,
-          };
-        }
-
+        if (!href && text) return { text, href: `/cat/${encodeURIComponent(text)}/` };
         return { text, href };
       }
-
       return null;
     })
     .filter(Boolean);
-   let zhCH=cats.map(v =>{
-    return {
-      ...v,
-      href:'/zh-CN'+v.href
-    }
-   }) 
-   cats=[...zhCH,...cats]
-  // 2) 生成 loc：相对 -> 拼站点；绝对 -> 判断是否同域
+
+  const zhCH = cats.map((v) => ({ ...v, href: '/zh-CN' + v.href }));
+  cats = [...zhCH, ...cats];
+
   const toLoc = (href) => {
     if (!href) return null;
 
-    // 绝对链接
     if (/^https?:\/\//i.test(href)) {
       try {
         const u = new URL(href);
         const my = new URL(site);
-        // 只收录同域（你也可以改成直接 return href; 但不推荐收录外站）
         if (u.hostname !== my.hostname) return null;
         return u.toString();
       } catch {
@@ -271,19 +332,16 @@ exports.sitemapCat = async (req, res) => {
       }
     }
 
-    // 相对路径
-    if (!href.startsWith("/")) href = `/${href}`;
+    if (!href.startsWith('/')) href = `/${href}`;
     return site + href;
   };
-  genreNav.forEach(v =>{
-    cats.push({
-      href:v
-    })
-  })
+
+  genreNav.forEach((v) => cats.push({ href: v }));
+
   const urls = cats
     .map(({ href }) => {
       const loc = toLoc(href);
-      if (!loc) return "";
+      if (!loc) return '';
       return `
   <url>
     <loc>${loc}</loc>
@@ -292,13 +350,48 @@ exports.sitemapCat = async (req, res) => {
   </url>`;
     })
     .filter(Boolean)
-    .join("");
+    .join('');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
 
-  res.set("Content-Type", "application/xml; charset=utf-8");
+  res.set('Content-Type', 'application/xml; charset=utf-8');
   res.send(xml);
+};
+
+// =======================
+// 5) 旧版 shard（默认关闭；即使开启也只返回随机 N）
+// =======================
+exports.sitemapJavsShard = async (req, res) => {
+  if (!ALLOW_SHARDED_SITEMAP) return res.status(404).send('not found');
+
+  const site = getSiteUrl(req);
+  const isGz = wantsGzip(req);
+
+  const shardRaw = String(req.params.shard || '1');
+  const shard = Math.max(1, parseInt(shardRaw.replace(/\D+/g, '') || '1', 10));
+  if (shard > MAX_SHARDS) return res.status(404).send('not found');
+
+  const key = `smj:shard:${site}:${shard}:n${SHARD_SIZE}`;
+
+  const xml = await cached(key, SITEMAP_JAVS_TTL_MS, async () => {
+    const docs = await Jav.aggregate([
+      { $match: { disable: { $ne: 1 } } },
+      { $sample: { size: SHARD_SIZE } },
+      { $project: { _id: 1, u: { $ifNull: ['$updatedAt', '$date'] } } },
+    ]);
+
+    const urls = docs
+      .map((d) => `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${ymd(d.u)}</lastmod></url>`)
+      .join('');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`;
+  });
+
+  return sendXml(res, xml, isGz);
 };

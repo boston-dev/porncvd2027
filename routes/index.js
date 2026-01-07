@@ -37,18 +37,9 @@ router.get('/dmca.html', (req, res) => {
 });
 // robots
 router.get('/robots.txt', seo.robots);
-
-// sitemap index：支持 xml / xml.gz
 router.get(['/sitemap.xml', '/sitemap.xml.gz'], seo.sitemapIndex);
-
-// jav shards：支持 xml / xml.gz（强烈建议加正则，只允许数字）
-router.get(
-  ['/sitemap-javs-:shard(\\d+)\\.xml', '/sitemap-javs-:shard(\\d+)\\.xml\\.gz'],
-  seo.sitemapJavsShard
-);
-
-// tag/cat：支持 xml / xml.gz
-router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTag);
+router.get(['/sitemap-javs.xml', '/sitemap-javs.xml.gz'], seo.sitemapJavsMix);
+router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTagTop);
 router.get(['/sitemap-cat.xml', '/sitemap-cat.xml.gz'], seo.sitemapCat);
 
 module.exports = router;
