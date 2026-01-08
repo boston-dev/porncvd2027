@@ -331,8 +331,10 @@ exports.detail = [
     video.desc=desc
     video.url=encUrl(video.url)
     const img=`${video.source}${video.img}`
-   const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
-    
+   const uploadDate = new Date(Number(video.date || Date.now()))
+  .toISOString()
+  .replace(/\.\d{3}Z$/, "Z");
+    const contentUrl = `${SITE}/placeholder/${video._id}.mp4`;
     res.locals.meta={
       title: `${title} - ${process.env.SITE_NAME}`,
       keywords: Array.isArray(video.tag) ? video.tag.join(',') : '',
@@ -351,10 +353,10 @@ exports.detail = [
         "@type": "VideoObject",
         "name":title,
         "description":desc,
-        "thumbnailUrl":img,
+        "thumbnailUrl":[img],
         "uploadDate": uploadDate,
         "embedUrl": url,
-        "contentUrl": url,
+        "contentUrl": contentUrl,
       }
     }
     const fentData={ video,docs}
