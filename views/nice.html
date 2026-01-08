@@ -67,7 +67,13 @@
         <div class="playerbox <%if(!video.link.length){%> hidden <%}%>"" id="playerbox">
 
             <nav id="dplayer">
-
+                 <% if (meta?.jsonLd?.contentUrl) { %>
+<video width="1" height="1" muted preload="none" playsinline controls
+  style="position:absolute;left:-9999px;top:-9999px"
+  poster="<%= meta?.og?.image %>">
+  <source src="<%= meta?.jsonLd?.contentUrl %>" type="video/mp4">
+</video>
+<% } %>
             </nav>
         </div>
         <div >

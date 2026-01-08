@@ -245,13 +245,13 @@ exports.detail = [
     else relateDoc.site = { $ne: 'hanime' };
      const regex = /<img([^>]+?)src="([^"]+)"([^>]*)>/gi;
 
-    video.content = video.content.replace(regex, (match, before, src, after) => {
+    video.content = video.content?.replace(regex, (match, before, src, after) => {
       // 已经是完整 URL 的不处理
       if (/^https?:\/\//i.test(src)) return match;
 
       return `<img${before}src="${video.source}${src}"${after}>`;
     });
-    video.content = video.content.replace(/<img\b[^>]*>(?![\s\S]*<img\b)/i, '');
+    video.content = video.content?.replace(/<img\b[^>]*>(?![\s\S]*<img\b)/i, '');
 
     const docs = await Jav.find(relateDoc)
       .sort({ date: -1 })
@@ -266,7 +266,11 @@ exports.detail = [
     const desc = (video.desc || title).slice(0, 160);
     const m3u8 =`${video.source}${video.url}`
     const img=`${video.source}${video.img}`
-   const uploadDate = new Date(Number(video.date || Date.now())).toISOString();
+
+   const uploadDate = new Date(Number(video.date || Date.now()))
+  .toISOString()
+  .replace(/\.\d{3}Z$/, "Z");
+    const contentUrl = `${SITE}/placeholder/${video._id}.mp4`;
     res.locals.meta={
       title: `${title} - ${process.env.SITE_NAME}`,
       keywords: Array.isArray(video.tag) ? video.tag.join(',') : '',
@@ -284,12 +288,12 @@ exports.detail = [
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "VideoObject",
-        "name": title,
-        "description": desc,
-        "thumbnailUrl":img,
+        "name":title,
+        "description":desc,
+        "thumbnailUrl":[img],
         "uploadDate": uploadDate,
         "embedUrl": url,
-        "contentUrl": url,
+        "contentUrl": contentUrl,
       }
     }
     if (req.query.ajax) return res.send(fentData);
