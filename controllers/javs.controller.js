@@ -142,12 +142,21 @@ function buildPrelinkByUrl(req, pageTpl = 'pageTpl') {
 }
 exports.tag = asyncHandler(async (req, res) => {
   const site= decodeURIComponent((req.query.site || '').trim())
-  const name = decodeURIComponent((req.params.name || '').trim());
+   const rawName = decodeURIComponent((req.params.name || '').trim());
+  const name = rawName.toLowerCase(); // ✅ 统一成小写
   const page = Math.max(1, parseInt(req.params.p || '1', 10));
   const limit = 40;
 
   if (!name) return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
-    const keywords = Array.isArray(name) ? name : [name];
+      let keywords = Array.isArray(name) ? name : [name];
+      if (name.includes('台灣')) keywords.push('台灣');
+      if (name.includes('自拍')) keywords.push('自拍');
+      if (name.includes('流出') || name.includes('外流')) keywords.push('流出');
+      if (name.includes('偷拍')) keywords.push('偷拍');
+      if (name.includes('twzp')) keywords.push('TWZP');
+      if (name.includes('custom udon')) keywords.push('Custom Udon');
+   
+    keywords= [...new Set(keywords)]
     const optRegexp = keywords
       .filter(Boolean)
       .map(k => new RegExp(escapeRegExp(k.trim()), 'i'));

@@ -317,7 +317,17 @@ exports.sitemapCat = async (req, res) => {
       return null;
     })
     .filter(Boolean);
+  cats.push({
+    href:`/cat/${encodeURIComponent('台灣自拍外流')}/`,
+  }) 
+  cats.push({
+    href:'/cat/TWZP/',
+  }) 
+   
   const zhCH = cats.map((v) => ({ ...v, href: '/zh-CN' + v.href }));
+  cats.push({
+    href:`/cat/${encodeURIComponent('custom udon')}/`,
+  })  
   cats = [...zhCH, ...cats];
 
   const toLoc = (href) => {
