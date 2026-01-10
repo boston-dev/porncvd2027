@@ -292,7 +292,10 @@ ${urls}
 exports.sitemapCat = async (req, res) => {
   const site = process.env.SITE_URL || `https://${req.hostname}`;
 
-  const catsRaw = [...navs] || [];
+  let catsRaw = ([...navs] || []).filter(v => {
+    if(!v.href) return true
+    return !v.href?.includes('http')
+  });
   if (!Array.isArray(catsRaw) || catsRaw.length === 0) {
     return res.status(404).end();
   }
@@ -314,7 +317,6 @@ exports.sitemapCat = async (req, res) => {
       return null;
     })
     .filter(Boolean);
-
   const zhCH = cats.map((v) => ({ ...v, href: '/zh-CN' + v.href }));
   cats = [...zhCH, ...cats];
 
