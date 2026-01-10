@@ -158,7 +158,7 @@ exports.tag = asyncHandler(async (req, res) => {
       .filter(Boolean)
       .map(k => new RegExp(escapeRegExp(k.trim()), 'i'));
      
-    const query = optRegexp.length
+    let query = optRegexp.length
       ? { tag: { $in: optRegexp } }
       : {}; // 没关键词就不加条件，避免 $in: []
     let prelink = buildPrelinkByUrl(req);
@@ -168,7 +168,12 @@ exports.tag = asyncHandler(async (req, res) => {
       Object.assign(query,{
           site
       })
-        prelink.includes('?') ? prelink+=`&site=${site}` : prelink+=`?site=${site}`
+      prelink.includes('?') ? prelink+=`&site=${site}` : prelink+=`?site=${site}`
+    }
+    if(name == 'porn5f'){
+     query={
+          site:'5f'
+      }
     }
   const result = await Jav.paginate(query, {
     page,
