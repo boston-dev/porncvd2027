@@ -150,9 +150,6 @@ exports.tag = asyncHandler(async (req, res) => {
   if (!name) return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
       let keywords = Array.isArray(name) ? name : [name];
       if (name.includes('台灣')) keywords.push('台灣');
-      if (name.includes('自拍')) keywords.push('自拍');
-      if (name.includes('流出') || name.includes('外流')) keywords.push('流出');
-      if (name.includes('偷拍')) keywords.push('偷拍');
       if (name.includes('twzp')) keywords.push('TWZP');
       if (name.includes('custom udon')) keywords.push('Custom Udon');
    
