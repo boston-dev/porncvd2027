@@ -1,4 +1,17 @@
 <%- include hosttag.html%>
+<!-- TAG 页面头部介绍（放在视频列表上方） -->
+ <%
+if(meta.titlePage){
+%>
+<section class="tag-hero-ultra">
+  <h1 class="tag-hero-ultra__title"><%=meta.titlePage%></h1>
+  <p class="tag-hero-ultra__desc">
+   <%=meta.descPage%>
+  </p>
+</section>
+<%
+}
+%>
 <div class="row video-list mobile-row js-tpl-view">
     <%
     for(var keys=0;keys<docs.length;keys++){

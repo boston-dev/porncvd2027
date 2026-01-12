@@ -192,6 +192,14 @@ exports.tag = asyncHandler(async (req, res) => {
     totalPages: result.totalPages, // 你 paginate 的返回
     siteName: process.env.SITE_NAME
   });
+  res.locals.meta={
+      ...res.locals.meta,
+      titlePage:`${rawName}视频合集`,
+      descPage:`
+      这里整理了与「${rawName} 相关的精选视频资源，内容更新及时，分类清晰，
+      方便用户快速查找感兴趣的相关作品。
+      `,
+    }
   Object.assign(result,{
     ...withPageRange(result,{prelink})
   })
@@ -207,6 +215,14 @@ exports.tag = asyncHandler(async (req, res) => {
         desc:t(video.desc),
       }
     })
+    res.locals.meta={
+      ...res.locals.meta,
+      title:t(res.locals.meta.title),
+      keywords:t(res.locals.meta.title),
+      desc:t(res.locals.meta.desc),
+      titlePage:t(res.locals.meta.titlePage),
+      descPage:t(res.locals.meta.descPage),
+    }
   }
   if(req.query.ajax){
        return  res.send( result);

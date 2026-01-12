@@ -23,7 +23,7 @@ function buildListMeta({ req, type, name, page, totalPages, siteName = 'porncvd'
   const canonical = buildAbsUrl(req, pagePath);
 
   // title/desc
- const typeLabel = type === 'tag' ? '相關影片' : '分類影片';
+const typeLabel = type === 'tag' ? '影片合集' : '分類影片';
 
 const titleBase = `${kw}${typeLabel} - ${siteName}`;
 const title =
@@ -33,13 +33,14 @@ const title =
 
 const descBase =
   type === 'tag'
-    ? `收錄${kw}相關影片，包含最新更新與熱門推薦，支援線上播放與分頁瀏覽。`
+    ? `這裡整理了與「${kw}」相關的精選影片資源，內容更新即時、分類清晰，方便快速查找感興趣的相關作品。`
     : `收錄${kw}分類影片合集，依更新時間與熱門程度瀏覽，支援分頁與篩選。`;
 
 const desc =
   page > 1
     ? `${descBase}（第${page}頁）`
     : descBase;
+
 
 
   // prev/next

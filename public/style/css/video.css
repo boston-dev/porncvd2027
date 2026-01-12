@@ -73,3 +73,21 @@
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
     font-weight:600;
   }
+
+ .tag-hero-ultra{ margin: 8px 0 6px; }
+  .tag-hero-ultra__title{
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: rgba(255,255,255,.9);
+  }
+  /* ✅ 视觉隐藏，但保留给搜索引擎 */
+  .tag-hero-ultra__desc{
+    position:absolute !important;
+    width:1px; height:1px;
+    padding:0; margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }

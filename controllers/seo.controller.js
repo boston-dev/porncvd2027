@@ -24,7 +24,8 @@
 
 const zlib = require('zlib');
 const Jav = require('../models/Jav');
-
+const ESSENCE = require('./tags_top200.json'); 
+const ENTRY_TAGS = new Set(ESSENCE.map(x => x.tag));
 const navs = require('../nav.json');
 let genreNav = require('../genreNav.json');
 genreNav = genreNav.map((v) => `/cat/${encodeURIComponent(v)}/?site=hanime`);
@@ -80,6 +81,18 @@ function getSiteUrl(req) {
 
   return `${proto}://${host}`.replace(/\/+$/, '');
 }
+function normalizeTagInput(s) {
+  let t = String(s ?? '').trim();
+
+  // 删除末尾的计数后缀： (6) / （6） / ( 6 ) / （ 6 ）
+  t = t.replace(/\s*(?:\(|（)\s*\d+\s*(?:\)|）)\s*$/, '');
+
+  // 顺便把末尾多余空格再清一下
+  return t.trim();
+}
+
+
+
 
 function ymd(d) {
   const dt = d ? new Date(d) : new Date();
@@ -261,15 +274,23 @@ exports.sitemapTagTop = async (req, res) => {
       { $sort: { cnt: -1 } },
       { $limit: TOP },
     ]);
-     agg=agg.filter(v =>{
-       if(navs.find(d => v._id.includes(d))){
-         return false
-       }
-       return true
-     })
+     agg = agg.map(value=> {
+      return {
+        ...value,
+        _id:normalizeTagInput(value._id)
+      }
+     }).filter(v => {
+      const norm = v._id;
+      // 1) 过滤导航占位词
+      if (navs.some(d => norm.includes(d))) return false;
+      // 2) 只保留精华tag（白名单）
+      if (!ENTRY_TAGS.has(norm)) return false;
+      return true;
+    });
+    console.log(agg)
     // tag sitemap 里的 lastmod：用“今天”即可（tag 页不是具体作品）
     const today = ymd(new Date());
-    console.log(agg)
+
     const urls = agg
       .map((t) => {
         const name = encodeURIComponent(String(t._id));
