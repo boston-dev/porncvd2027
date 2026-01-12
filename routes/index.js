@@ -81,6 +81,7 @@ router.get('/zh-CN/genre/:p?', (req, res) => {
   return res.redirect(301, `/genre${p}${qs}`);
 });
 
+router.get('/users/findMyTag', javs.findMyTag);//chatgpt
 router.post('/users/resource', javs.resourcePost);//chatgpt
 router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);

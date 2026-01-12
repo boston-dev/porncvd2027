@@ -467,3 +467,25 @@ exports.hot = asyncHandler(async (req, res) => {
    }
   return res.render('boot', result);
 });
+
+exports.findMyTag = asyncHandler(async (req, res) => {
+  const agg = await Jav.aggregate([
+    { $match: { disable: { $ne: 1 }, tag: { $exists: true, $ne: null } } },
+    { $project: { tag: 1 } },
+    { $project: { tags: { $cond: [{ $isArray: "$tag" }, "$tag", ["$tag"]] } } },
+    { $unwind: "$tags" },
+    { $match: { tags: { $type: "string", $ne: "" } } },
+    { $group: { _id: "$tags", cnt: { $sum: 1 } } },
+    { $match: { cnt: { $gte: 50 } } },
+    { $sort: { cnt: -1 } },
+    { $limit: 5000 }
+  ]);
+
+  const filename = `tags_${Date.now()}.json`;
+
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+  // 美化输出（可选）
+  res.send(JSON.stringify(agg, null, 2));
+});
