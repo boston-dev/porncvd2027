@@ -148,14 +148,12 @@ exports.sitemapIndex = async (req, res) => {
   const xml = await cached(key, SITEMAP_TTL_MS, async () => {
     const now = new Date().toISOString();
 
-    const hanimeLoc = `${site}/sitemap-hanime.xml`;
     const javsLoc = `${site}/sitemap-javs.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
 
     const items =
       `<sitemap><loc>${javsLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
-      `<sitemap><loc>${hanimeLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
 
@@ -181,14 +179,13 @@ exports.sitemapJavsMix = async (req, res) => {
   const RANDOM = Math.max(0, Math.min(SITEMAP_JAVS_RANDOM, SITEMAP_JAVS_TOTAL - RECENT));
   const TOTAL = RECENT + RANDOM;
 
-  const key = `smj:mix:main:${site}:t${TOTAL}:r${RECENT}:x${RANDOM}`;
+  const key = `smj:mix:${site}:t${TOTAL}:r${RECENT}:x${RANDOM}`;
 
   const xml = await cached(key, SITEMAP_JAVS_TTL_MS, async () => {
     // 最近更新 RECENT
     let recentDocs = [];
-    const baseQuery={ disable: { $ne: 1 },site:{$ne:"hanime"} }
     if (RECENT > 0) {
-      recentDocs = await Jav.find(baseQuery)
+      recentDocs = await Jav.find({ disable: { $ne: 1 } })
         .sort({ updatedAt: -1, date: -1, _id: -1 })
         .select({ _id: 1, updatedAt: 1, date: 1 })
         .limit(RECENT)
@@ -199,7 +196,7 @@ exports.sitemapJavsMix = async (req, res) => {
     let randomDocs = [];
     if (RANDOM > 0) {
       randomDocs = await Jav.aggregate([
-        { $match: baseQuery },
+        { $match: { disable: { $ne: 1 } } },
         { $sample: { size: RANDOM } },
         { $project: { _id: 1, updatedAt: 1, date: 1 } },
       ]);
@@ -249,82 +246,7 @@ ${urls}
 
   return sendXml(res, xml, isGz);
 };
-exports.sitemapHanime = async (req, res) => {
-  const site = getSiteUrl(req);
-  const isGz = wantsGzip(req);
 
-  // 防止配错：确保 RANDOM >= 0
-  const RECENT = Math.max(0, Math.min(SITEMAP_JAVS_RECENT, SITEMAP_JAVS_TOTAL));
-  const RANDOM = Math.max(0, Math.min(SITEMAP_JAVS_RANDOM, SITEMAP_JAVS_TOTAL - RECENT));
-  const TOTAL = RECENT + RANDOM;
-
-  const key = `smj:mix:hanime:${site}:t${TOTAL}:r${RECENT}:x${RANDOM}`;
-  const baseQuery={ disable: { $ne: 1 },site:{$eq:"hanime"} }
-  const xml = await cached(key, SITEMAP_JAVS_TTL_MS, async () => {
-    // 最近更新 RECENT
-    let recentDocs = [];
-    if (RECENT > 0) {
-      recentDocs = await Jav.find(baseQuery)
-        .sort({ updatedAt: -1, date: -1, _id: -1 })
-        .select({ _id: 1, updatedAt: 1, date: 1 })
-        .limit(RECENT)
-        .lean();
-    }
-
-    // 随机 RANDOM（MongoDB 端随机）
-    let randomDocs = [];
-    if (RANDOM > 0) {
-      randomDocs = await Jav.aggregate([
-        { $match: baseQuery },
-        { $sample: { size: RANDOM } },
-        { $project: { _id: 1, updatedAt: 1, date: 1 } },
-      ]);
-    }
-
-    // 合并去重（避免 recent 与 random 重叠）
-    const seen = new Set();
-    const merged = [];
-
-    for (const d of recentDocs) {
-      const id = String(d._id);
-      if (seen.has(id)) continue;
-      seen.add(id);
-      merged.push(d);
-    }
-    for (const d of randomDocs) {
-      const id = String(d._id);
-      if (seen.has(id)) continue;
-      seen.add(id);
-      merged.push(d);
-    }
-
-    // 如果去重后 < TOTAL，用最近更新补齐（尽量不再额外 random，降低波动）
-    if (merged.length < TOTAL) {
-      const need = TOTAL - merged.length;
-      const filler = await Jav.find({ ...baseQuery, _id: { $nin: Array.from(seen) } })
-        .sort({ updatedAt: -1, date: -1, _id: -1 })
-        .select({ _id: 1, updatedAt: 1, date: 1 })
-        .limit(need)
-        .lean();
-      for (const d of filler) merged.push(d);
-    }
-
-    const urls = merged
-      .slice(0, TOTAL)
-      .map((d) => {
-        const u = d.updatedAt || d.date;
-        return `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${ymd(u)}</lastmod></url>`;
-      })
-      .join('');
-
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}
-</urlset>`;
-  });
-
-  return sendXml(res, xml, isGz);
-};
 // =======================
 // 3) tag sitemap：只输出 Top 标签（按 cnt 倒序）
 //    - 把“长尾 tag 清单”从 sitemap 移除，降低被脚本顺藤摸瓜
