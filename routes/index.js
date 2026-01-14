@@ -93,6 +93,7 @@ router.get('/dmca.html', (req, res) => {
 router.get('/robots.txt', seo.robots);
 router.get(['/sitemap.xml', '/sitemap.xml.gz'], seo.sitemapIndex);
 router.get(['/sitemap-javs.xml', '/sitemap-javs.xml.gz'], seo.sitemapJavsMix);
+router.get(['/sitemap-hanime.xml', '/sitemap-hanime.xml.gz'], seo.sitemapHanime);
 router.get(['/sitemap-tag.xml', '/sitemap-tag.xml.gz'], seo.sitemapTagTop);
 router.get(['/sitemap-cat.xml', '/sitemap-cat.xml.gz'], seo.sitemapCat);
 
