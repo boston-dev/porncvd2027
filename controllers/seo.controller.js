@@ -225,7 +225,7 @@ exports.sitemapJavsMix = async (req, res) => {
     // 如果去重后 < TOTAL，用最近更新补齐（尽量不再额外 random，降低波动）
     if (merged.length < TOTAL) {
       const need = TOTAL - merged.length;
-      const filler = await Jav.find({ disable: { $ne: 1 }, _id: { $nin: Array.from(seen) } })
+      const filler = await Jav.find({ ...baseQuery, _id: { $nin: Array.from(seen) } })
         .sort({ updatedAt: -1, date: -1, _id: -1 })
         .select({ _id: 1, updatedAt: 1, date: 1 })
         .limit(need)
