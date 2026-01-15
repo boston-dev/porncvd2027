@@ -5,7 +5,7 @@
   "description": "PornCVD stable production backend (Express + Mongoose)",
   "main": "app.js",
   "scripts": {
-    "start": "cross-env PORT=3033 SITE_NAME=Anihaven SITE_URL=\"https:/anihaven.me\" NODE_ENV=production node app.js",
+    "start": "cross-env PORT=3033 SITE_NAME=Anihaven SITE_URL=\"https://anihaven.me\" NODE_ENV=production node app.js",
     "dev": "cross-env PORT=3033 SITE_NAME=Anihaven SITE_URL=\"http://127.0.0.1:3033\" nodemon app.js"
   },
   "dependencies": {
