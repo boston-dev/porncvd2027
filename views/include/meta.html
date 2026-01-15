@@ -41,11 +41,9 @@
   function buildDomain(parts) {
     return parts.join('');
   }
-  const d1Parts = ["hrt", "21",".", "c", "o", "m"];
-  const d2Parts = ["porn", "cvd",".", "c", "o", "m"];
+  const d1Parts = ["an", "ihaven",".","m", "e"];
   const allow = [
     buildDomain(d1Parts),
-    buildDomain(d2Parts),
   ];
   const host = (location.hostname || "").toLowerCase();
   const ok = allow.some(d => host === d || host.endsWith("." + d));
