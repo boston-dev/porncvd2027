@@ -28,7 +28,7 @@ const ESSENCE = require('./tags_top200.json');
 const ENTRY_TAGS = new Set(ESSENCE.map(x => x.tag));
 const navs = require('../nav.json');
 let genreNav = require('../genreNav.json');
-genreNav = genreNav.map((v) => `/cat/${encodeURIComponent(v)}/?site=hanime`);
+genreNav = genreNav.map((v) => `/cat/${encodeURIComponent(v)}/`);
 
 // =======================
 // 可配置参数（环境变量）
@@ -91,7 +91,7 @@ function normalizeTagInput(s) {
   return t.trim();
 }
 
-
+ const baseQuery={ disable: { $ne: 1 },site:"hanime" }
 
 
 function ymd(d) {
@@ -149,12 +149,10 @@ exports.sitemapIndex = async (req, res) => {
     const now = new Date().toISOString();
 
     const hanimeLoc = `${site}/sitemap-hanime.xml`;
-    const javsLoc = `${site}/sitemap-javs.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
 
     const items =
-      `<sitemap><loc>${javsLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${hanimeLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
@@ -259,7 +257,7 @@ exports.sitemapHanime = async (req, res) => {
   const TOTAL = RECENT + RANDOM;
 
   const key = `smj:mix:hanime:${site}:t${TOTAL}:r${RECENT}:x${RANDOM}`;
-  const baseQuery={ disable: { $ne: 1 },site:"hanime" }
+ 
   const xml = await cached(key, SITEMAP_JAVS_TTL_MS, async () => {
     // 最近更新 RECENT
     let recentDocs = [];
@@ -343,7 +341,7 @@ exports.sitemapTagTop = async (req, res) => {
     }
 
     let agg = await Jav.aggregate([
-      { $match: { disable: { $ne: 1 }, tag: { $exists: true, $ne: null } } },
+      { $match: { ...baseQuery, tag: { $exists: true, $ne: null } } },
       { $project: { tag: 1 } },
       { $project: { tags: { $cond: [{ $isArray: '$tag' }, '$tag', ['$tag']] } } },
       { $unwind: '$tags' },
@@ -391,71 +389,16 @@ ${urls}
 exports.sitemapCat = async (req, res) => {
   const site = process.env.SITE_URL || `https://${req.hostname}`;
 
-  let catsRaw = ([...navs] || []).filter(v => {
-    if(!v.href) return true
-    return !v.href?.includes('http')
-  });
-  if (!Array.isArray(catsRaw) || catsRaw.length === 0) {
-    return res.status(404).end();
-  }
 
-  let cats = catsRaw
-    .map((v) => {
-      if (typeof v === 'string') {
-        const name = v.trim();
-        if (!name) return null;
-        return { text: name, href: `/cat/${encodeURIComponent(name)}/` };
-      }
-      if (v && typeof v === 'object') {
-        const text = String(v.text ?? v.name ?? '').trim();
-        const href = String(v.href ?? '').trim();
-        if (!text && !href) return null;
-        if (!href && text) return { text, href: `/cat/${encodeURIComponent(text)}/` };
-        return { text, href };
-      }
-      return null;
-    })
-    .filter(Boolean);
-  cats.push({
-    href:`/cat/${encodeURIComponent('台灣自拍外流')}/`,
-  }) 
-  cats.push({
-    href:'/cat/TWZP/',
-  }) 
-   
-  const zhCH = cats.map((v) => ({ ...v, href: '/zh-CN' + v.href }));
-  cats.push({
-    href:`/cat/${encodeURIComponent('custom udon')}/`,
-  })  
-  cats = [...zhCH, ...cats];
+  let cats = []
 
-  const toLoc = (href) => {
-    if (!href) return null;
-
-    if (/^https?:\/\//i.test(href)) {
-      try {
-        const u = new URL(href);
-        const my = new URL(site);
-        if (u.hostname !== my.hostname) return null;
-        return u.toString();
-      } catch {
-        return null;
-      }
-    }
-
-    if (!href.startsWith('/')) href = `/${href}`;
-    return site + href;
-  };
-
-  genreNav.forEach((v) => cats.push({ href: v }));
+  genreNav.forEach((v) => cats.push({ href: `${site}${v}` }));
 
   const urls = cats
     .map(({ href }) => {
-      const loc = toLoc(href);
-      if (!loc) return '';
       return `
   <url>
-    <loc>${loc}</loc>
+    <loc>${href}</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>`;

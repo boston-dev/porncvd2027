@@ -52,9 +52,10 @@ app.use( async (req,res,next) => {
      // 是否简体页面（只判断路由前缀）
   res.locals.isCN = req.path.startsWith('/zh-CN')
   res.locals.basePath= res.locals.isCN ? '/zh-CN' :''
-
+  res.locals.baseQuery={ disable: { $ne: 1 },site:"hanime" }
   res.locals.siteArr=['hanime']
-   res.locals.gNav=gNav
+  res.locals.genreNav=genreNav
+  res.locals.gNav=genreNav
   res.locals.isProd = process.env.NODE_ENV === 'production';
    res.locals.t = (s) => {
       // 不是中文环境，原样返回
@@ -80,18 +81,18 @@ app.use( async (req,res,next) => {
    res.locals.curSite=''
    res.locals.tplLang=''
    res.locals.orders_id=''
-   res.locals.genreNav=genreNav
+   
 
   res.locals.t = (text,typeSite) => {
     if (!text || typeSite=='hanime') return text
     const str = String(text)
     return res.locals.isCN ? toCN(str) : str
   }
-
+   const siteName=process.env.SITE_NAME
    res.locals.meta={
-      "title": "porncvd - 素人av/免費A片/流出/性愛自拍/素人/成人無碼/免費成人/台灣自拍",
-      "keywords": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",
-      "desc": "上萬免費在線A片，最新番號中文字幕、無碼流出、Hentai、色情動漫、JAV、國產自拍、做愛av、素人av、免費A片、流出、性愛自拍、素人、成人無碼、免費成人、台灣自拍，出處你懂的",
+      "title": `${siteName} - H動漫/里番/成人動畫 線上看｜高清無廣告`,
+      "keywords": "H動漫, 里番, 成人動畫, Hanime, 3DCG, 同人動畫, 動漫線上看, 高清",
+      "desc": `${siteName} 提供 H動漫、里番、成人動畫、3DCG、同人動畫線上看。更新快、高清播放、分類清晰，支援手機與電腦瀏覽`,
       "title_zh": "porncvd - 素人av/免费A片/流出/性爱自拍/素人/成人无码/免费成人/台湾自拍",
       "keywords_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",
       "desc_zh": "上万免费在线A片，最新番号中文字幕、无码流出、Hentai、色情动漫、JAV、国产自拍、做爱av、素人av、免费A片、流出、性爱自拍、素人、成人无码、免费成人、台湾自拍，出处你懂的",

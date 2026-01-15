@@ -36,7 +36,7 @@ function escReg(s) {
       actor: 1,
       type: 1,
     } 
-const queryFirt= { disable: { $ne: 1 } };   
+const queryFirt= { disable: { $ne: 1 },site:"hanime"};   
 exports.home = asyncHandler(async (req, res) => {
   const {siteArr}=res.locals
   // 首页：最新
