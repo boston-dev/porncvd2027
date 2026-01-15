@@ -259,7 +259,7 @@ exports.sitemapHanime = async (req, res) => {
   const TOTAL = RECENT + RANDOM;
 
   const key = `smj:mix:hanime:${site}:t${TOTAL}:r${RECENT}:x${RANDOM}`;
-  const baseQuery={ disable: { $ne: 1 },site:{$eq:"hanime"} }
+  const baseQuery={ disable: { $ne: 1 },site:"hanime" }
   const xml = await cached(key, SITEMAP_JAVS_TTL_MS, async () => {
     // 最近更新 RECENT
     let recentDocs = [];
