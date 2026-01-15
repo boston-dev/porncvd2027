@@ -234,7 +234,7 @@ exports.sitemapJavsMix = async (req, res) => {
       .slice(0, TOTAL)
       .map((d) => {
         const u = d.updatedAt || d.date;
-        return `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${ymd(u)}</lastmod></url>`;
+        return `<url><loc>${site}/hanime/${d._id}.html</loc><lastmod>${ymd(u)}</lastmod></url>`;
       })
       .join('');
 
@@ -417,7 +417,7 @@ exports.sitemapJavsShard = async (req, res) => {
     ]);
 
     const urls = docs
-      .map((d) => `<url><loc>${site}/javs/${d._id}.html</loc><lastmod>${ymd(d.u)}</lastmod></url>`)
+      .map((d) => `<url><loc>${site}/hanime/${d._id}.html</loc><lastmod>${ymd(d.u)}</lastmod></url>`)
       .join('');
 
     return `<?xml version="1.0" encoding="UTF-8"?>

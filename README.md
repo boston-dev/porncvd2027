@@ -4,7 +4,7 @@
 > 视图模板（EJS）请继续沿用你线上 porncvd.com 的结构，本模板只强化后端稳定性。
 
 ## 关键增强
-- 详情页 `/javs/:id.html`：**ObjectId 正则校验**（24位hex）→ 非法直接 404，不进数据库
+- 详情页 `/hanime/:id.html`：**ObjectId 正则校验**（24位hex）→ 非法直接 404，不进数据库
 - 全局错误兜底：任何异常都不会泄露堆栈，并避免未处理导致重启
 - Mongo 连接：失败 **指数退避重试**（不 crash-loop）
 - 限速：全站 baseline + 详情页更严格
@@ -26,7 +26,7 @@ pm2 start app.js --name porncvd
 pm2 save
 
 ## Nginx 建议
-在 Nginx 对 `/javs/` 做 limit_req，配合本模板更抗刷。
+在 Nginx 对 `/hanime/` 做 limit_req，配合本模板更抗刷。
 
 
 ## 统一 404 / 报错页面

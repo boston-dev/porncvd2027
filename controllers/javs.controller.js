@@ -277,7 +277,7 @@ async function pickOnePlayableVideo(site) {
 exports.detail = [
   detailLimiter,
   asyncHandler(async (req, res) => {
-    if (req.url.includes('/javs/realte.html')) return res.redirect('/');
+    if (req.url.includes('/hanime/realte.html')) return res.redirect('/');
 
     const raw = req.params.id || '';
     let id = raw.replace(/\.html$/i, '');
@@ -341,7 +341,7 @@ exports.detail = [
 
     const SITE = process.env.SITE_URL || 'https://porncvd.com';
 
-    const url = `${SITE}${res.locals.basePath}/javs/${video._id}.html`;
+    const url = `${SITE}${res.locals.basePath}/hanime/${video._id}.html`;
     let title =sanitizeUnicode(video.title || 'Video') ;
     let desc = sanitizeUnicode((video.desc || title).slice(0, 160));
     if(isCN && !isHanime){

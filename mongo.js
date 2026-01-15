@@ -17,13 +17,13 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/downM3u8";
 
 // ✅ 把要处理的 URL / 页面路径 放这里
 const urls = [
-  "https://porncvd.com/javs/694010f8902835b2f9f4ec54.html",
-  "https://porncvd.com/javs/6943aebc0a2465cf1654165f.html",
-  "https://porncvd.com/javs/6943b2e30a2465cf16545abf.html",
-  "https://porncvd.com/javs/6943b2c30a2465cf1654585b.html"
+  "https://porncvd.com/hanime/694010f8902835b2f9f4ec54.html",
+  "https://porncvd.com/hanime/6943aebc0a2465cf1654165f.html",
+  "https://porncvd.com/hanime/6943b2e30a2465cf16545abf.html",
+  "https://porncvd.com/hanime/6943b2c30a2465cf1654585b.html"
 ];
 
-// 从 URL 里提取 /javs/<id>.html 的 <id>
+// 从 URL 里提取 /hanime/<id>.html 的 <id>
 function extractIdFromUrl(u) {
   try {
     const m = u.match(/\/javs\/([^\/]+)\.html/i);
