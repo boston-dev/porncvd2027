@@ -186,7 +186,7 @@ exports.sitemapJavsMix = async (req, res) => {
   const xml = await cached(key, SITEMAP_JAVS_TTL_MS, async () => {
     // 最近更新 RECENT
     let recentDocs = [];
-    const baseQuery={ disable: { $ne: 1 },site:{$ne:"hanime"} }
+    const baseQuery={ disable: { $ne: 1 },site:{$nin:["hanime","jav-dove"] }}
     if (RECENT > 0) {
       recentDocs = await Jav.find(baseQuery)
         .sort({ updatedAt: -1, date: -1, _id: -1 })
