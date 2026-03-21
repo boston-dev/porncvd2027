@@ -1,25 +1,25 @@
 [
-    "探花",
-    "自拍",
-    "流出",
-    "偷拍",
-    "台灣",
-    "VIP熱門",
-    "國產",
-    "日韓",
-    {
-        "text": "動漫",
-        "href": "/genre",
-        "target":"_blank"
-    },
-    "傳媒",
-    {
-        "text": "當前最熱",
-        "href": "/hot"
-    },
-     {
-        "text": "黑料吃瓜",
-        "href": "https://91cgc.com/",
-        "target":"_blank"
-    }
+  { "text": "探花", "href": "/cat/tanhua" },
+  { "text": "自拍", "href": "/cat/zipai" },
+  { "text": "流出", "href": "/cat/liuchu" },
+  { "text": "偷拍", "href": "/cat/toupai" },
+  { "text": "台灣", "href": "/cat/taiwan" },
+  { "text": "VIP熱門", "href": "/cat/VIPremen" },
+  { "text": "國產", "href": "/cat/guochan" },
+  { "text": "日韓", "href": "/cat/rihan" },
+  {
+    "text": "動漫",
+    "href": "/genre",
+    "target": "_blank"
+  },
+  { "text": "傳媒", "href": "/cat/chuanmei" },
+  {
+    "text": "當前最熱",
+    "href": "/hot"
+  },
+  {
+    "text": "黑料吃瓜",
+    "href": "https://91cgc.com/",
+    "target": "_blank"
+  }
 ]

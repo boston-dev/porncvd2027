@@ -47,8 +47,8 @@
                             %>
                             <li class="nav-list"><a class="js-nav-head "
     
-                                href="<%=basePath%>/cat/<%=item%>/<%=curSite ? `?site=${curSite}` : ''%>"
-                                ><%=t(item)%></a></li>
+                                href="<%=basePath%>/cat/<%=item.p%>/<%=curSite ? `?site=${curSite}` : ''%>"
+                                ><%=t(item.text)%></a></li>
                             <%
                             }
                             %>
@@ -102,9 +102,9 @@
                             %>
                             <li class="nav-list"><a class="js-nav-head mr-1"
     
-                                href="<%=basePath%>/cat/<%=item%>/"
+                                href="<%=basePath%>/cat/<%=item.p%>/"
                                 >
-                                <span class="iconicfill-hash text-danger "></span><%=t(item)%>
+                                <span class="iconicfill-hash text-danger "></span><%=t(item.text)%>
                             </a></li>
                             <%
                             }
