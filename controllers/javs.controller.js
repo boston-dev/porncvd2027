@@ -15,7 +15,7 @@ const OldUrlMap = require("../models/OldUrlMap");
 const tagNav = require("../nav.json")
   .filter((v) => v.href.includes("/cat"))
   .map((v) => {
-    return { ...v, p: v.href.replace("/cat", "").toLowerCase() };
+    return { ...v, p: v.href.replace("/cat/", "").toLowerCase() };
   });
 /**
  * 线上一致：字段不改、集合不改、分页使用 mongoose-paginate-v2
@@ -154,7 +154,7 @@ exports.tag = asyncHandler(async (req, res) => {
   const site = decodeURIComponent((req.query.site || "").trim());
   const rawName = decodeURIComponent((req.params.name || "").trim());
   let name = rawName.toLowerCase(); // ✅ 统一成小写
-  const findWord = tagNav.find(v.p == name);
+  const findWord = tagNav.find((v) => v.p == name);
   if (findWord) {
     name = findWord.text;
   }
@@ -210,9 +210,9 @@ exports.tag = asyncHandler(async (req, res) => {
   });
   res.locals.meta = {
     ...res.locals.meta,
-    titlePage: `${rawName}视频合集`,
+    titlePage: `${name}视频合集`,
     descPage: `
-      这里整理了与「${rawName} 相关的精选视频资源，内容更新及时，分类清晰，
+      这里整理了与「${name} 相关的精选视频资源，内容更新及时，分类清晰，
       方便用户快速查找感兴趣的相关作品。
       `,
   };
