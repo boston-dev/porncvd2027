@@ -1,1 +1,8 @@
-["里番","泡面番","Motion Anime","3DCG","同人作品","Cosplay"]
+[
+  { "text": "里番", "href": "/cat/里番/?site=hanime" },
+  { "text": "泡面番", "href": "/cat/泡面番/?site=hanime" },
+  { "text": "Motion Anime", "href": "/cat/Motion Anime/?site=hanime" },
+  { "text": "3DCG", "href": "/cat/3DCG/?site=hanime" },
+  { "text": "同人作品", "href": "/cat/同人作品/?site=hanime" },
+  { "text": "Cosplay", "href": "/cat/Cosplay/?site=hanime" }
+]
