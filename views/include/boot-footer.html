@@ -100,6 +100,7 @@
           var listTop = data.listTop || [];
           var listBtm = data.listBtm || [];
           var listLeft = data.listLeft || [];
+          var usList= data.usList || [];
           repeatTimes = data.repeatTimes || repeatTimes;
 
           if (Array.isArray(listTop) && listTop.length) {
@@ -112,6 +113,9 @@
 
           if (Array.isArray(listLeft) && listLeft.length) {
             rotateAds({ list: listLeft, pos: 'left', repeatTimes: repeatTimes });
+          }
+          if (Array.isArray(usList) && usList.length) {
+            rotateAdsUs({ list: usList, pos: 'uscode', repeatTimes: 1 });
           }
         },
         error: function (xhr) {
@@ -154,7 +158,66 @@
       localStorage.setItem(keyIndex, idx);
       localStorage.setItem(keyShown, shown);
     }
+    function rotateAdsUs (options) {
+      var list = options.list.filter(function(d){
+        return location.host.indexOf(d.site) > -1
+      });
+
+      var pos = options.pos;
+      var repeatTimes = options.repeatTimes;
+      var hours = options.hours || 1; // ⭐ 默认6小时
+
+      var keyIndex = 'snippet_index_' + pos;
+      var keyShown = 'snippet_shown_' + pos;
+      var keyTime  = 'snippet_time_' + pos; // ⭐ 新增时间key
+
+      var idx = parseInt(localStorage.getItem(keyIndex), 10);
+      var shown = parseInt(localStorage.getItem(keyShown), 10);
+      var lastTime = parseInt(localStorage.getItem(keyTime), 10);
+
+      var now = Date.now();
+
+      // ===== 时间控制 =====
+      // if (!isNaN(lastTime)) {
+      //   var diff = now - lastTime;
+      //   if (diff < hours * 60 * 60 * 1000) {
+      //     //未到时间，不展示
+      //     return;
+      //   }
+      // }
+
+      if (isNaN(idx) || idx >= list.length) idx = 0;
+      if (isNaN(shown) || shown < 0) shown = 0;
+
+      var doc = list[idx];
+      if (!doc) return;
+
+      var src = doc.src;
+
+      $('script[data-ad="' + pos + '"]').remove();
+
+      $('<script>', {
+        src: src,
+        async: true,
+        'data-ad': pos
+      }).appendTo('body');
+
+      // ⭐ 记录展示时间
+      localStorage.setItem(keyTime, now);
+
+      shown += 1;
+
+      if (shown >= repeatTimes) {
+        shown = 0;
+        idx = (idx + 1) % list.length;
+      }
+
+      localStorage.setItem(keyIndex, idx);
+      localStorage.setItem(keyShown, shown);
+    }
+
   });
+
 </script>
 </body>
 </html>
