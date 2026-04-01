@@ -158,11 +158,10 @@ exports.sitemapIndex = async (req, res) => {
     const javsLoc = `${site}/sitemap-javs.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
-
+    // `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
     const items =
       `<sitemap><loc>${javsLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${hanimeLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
-      `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
 
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -460,8 +459,7 @@ exports.sitemapCat = async (req, res) => {
     return site + href;
   };
 
-  genreNav.forEach((v) => cats.push({ href: v }));
-
+  genreNav.forEach((v) => cats.push({ href: v.href }));
   const urls = cats
     .map(({ href }) => {
       const loc = toLoc(href);
