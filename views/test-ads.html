@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Ads Page</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #111;
+        color: #fff;
+        line-height: 1.6;
+      }
+
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+      }
+
+      .desc {
+        color: #ccc;
+        margin-bottom: 20px;
+      }
+
+      .card {
+        background: #1b1b1b;
+        border: 1px solid #333;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 8px;
+        background: #2d7ef7;
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+      }
+
+      .btn:hover {
+        opacity: 0.92;
+      }
+
+      .status {
+        margin-top: 12px;
+        color: #aaa;
+        font-size: 14px;
+        word-break: break-all;
+      }
+
+      .player-box {
+        margin-top: 16px;
+        background: #000;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 20px;
+        min-height: 240px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #888;
+        text-align: center;
+      }
+
+      code {
+        background: #222;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Ad Review Test Page</h1>
+      <div class="desc">
+        This page is created for compliance review. The ad script loads
+        automatically after page load.
+      </div>
+
+      <div class="card">
+        <strong>Review URL:</strong>
+        <code>/test-ads.html</code>
+
+        <div class="player-box" id="dplayer">
+          Test player area<br />
+          Ad script will auto-load after 1 second.
+        </div>
+
+        <div style="margin-top: 16px">
+          <button class="btn" id="manualLoadBtn">Manual Load Ads</button>
+        </div>
+
+        <div class="status" id="statusText">Waiting to load ad script...</div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var loaded = false;
+        var scriptSrc = "/player-init.js?v=1";
+        var statusEl = document.getElementById("statusText");
+
+        function setStatus(text) {
+          if (statusEl) statusEl.textContent = text;
+        }
+
+        function loadPop() {
+          if (loaded) {
+            setStatus("Ad script already loaded: " + scriptSrc);
+            return;
+          }
+
+          loaded = true;
+
+          var oldScript = document.getElementById("review-ad-script");
+          if (oldScript) {
+            oldScript.parentNode.removeChild(oldScript);
+          }
+
+          var s = document.createElement("script");
+          s.id = "review-ad-script";
+          s.src = scriptSrc;
+          s.async = true;
+
+          s.onload = function () {
+            setStatus("Ad script loaded successfully: " + scriptSrc);
+          };
+
+          s.onerror = function () {
+            setStatus("Failed to load ad script: " + scriptSrc);
+            loaded = false;
+          };
+
+          document.body.appendChild(s);
+          setStatus("Loading ad script...");
+        }
+
+        // 页面打开后自动加载，给审核看
+        window.addEventListener("load", function () {
+          setTimeout(loadPop, 1000);
+        });
+
+        // 手动按钮
+        var btn = document.getElementById("manualLoadBtn");
+        if (btn) {
+          btn.addEventListener("click", loadPop);
+        }
+      })();
+    </script>
+  </body>
+</html>
