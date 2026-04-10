@@ -50,6 +50,7 @@
   <%- JSON.stringify(meta.jsonLd) %>
 </script>
 <% } %>
+
 <script>
   (function () {
     function buildDomain(parts) {
@@ -61,6 +62,6 @@
     const host = (location.hostname || "").toLowerCase();
     const ok = allow.some((d) => host === d || host.endsWith("." + d));
     if (ok) return;
-    location.replace("https://www.google.com/");
+    location.replace("https://viet123.tv");
   })();
 </script>
