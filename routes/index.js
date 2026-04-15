@@ -69,6 +69,14 @@ router.post('/users/resource', javs.resourcePost);
 router.post('/thumbzilla/checkData', javs.resourceFind);
 router.post('/users/isHave', javs.resourceFind);
 
+router.post('/users/chatsHost', javs.chatsHost);
+router.get('/dmca.html', (req, res) => {
+  return res.render('dmca');
+});
+router.get("/2257.html", (req, res) => {
+  return res.render("2257");
+});
+
 // robots
 router.get('/robots.txt', seo.robots);
 
