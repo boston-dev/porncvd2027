@@ -92,6 +92,9 @@ router.get("/dmca.html", (req, res) => {
 router.get("/test-ads.html", (req, res) => {
   return res.render("test-ads");
 });
+router.get("/2257.html", (req, res) => {
+  return res.render("2257");
+});
 // robots
 router.get("/robots.txt", seo.robots);
 router.get(["/sitemap.xml", "/sitemap.xml.gz"], seo.sitemapIndex);
