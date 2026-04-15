@@ -89,6 +89,9 @@ router.post('/users/chatsHost', javs.chatsHost);
 router.get('/dmca.html', (req, res) => {
   return res.render('dmca');
 });
+router.get("/2257.html", (req, res) => {
+  return res.render("2257");
+});
 // robots
 router.get('/robots.txt', seo.robots);
 router.get(['/sitemap.xml', '/sitemap.xml.gz'], seo.sitemapIndex);
