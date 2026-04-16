@@ -90,17 +90,37 @@
     fallbackTimer = setTimeout(function () {
       triggerLoadAds();
     }, 1800);
+    function getDeviceType() {
+      const ua = navigator.userAgent;
 
+      if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+        return "Mobile";
+      }
+
+      return "Desktop";
+    }
+    function filterAdsByDevice(list) {
+      const device = getDeviceType();
+
+      return list.filter(ad => {
+        // 没有 type → 通用广告
+        if (!ad.type) return true;
+
+        // 有 type → 必须匹配设备
+        return ad.type === device;
+      });
+    }
     function loadAds () {
       $.ajax({
         url: 'https://v.viet123.tv/api/snippets',
+        data:{},
         type: 'GET',
         dataType: 'json',
         success: function (data) {
           var listTop = data.listTop || [];
           var listBtm = data.listBtm || [];
           var listLeft = data.listLeft || [];
-          var usList= data.usList || [];
+          var usList=filterAdsByDevice(data.usList || []);
           repeatTimes = data.repeatTimes || repeatTimes;
 
           if (Array.isArray(listTop) && listTop.length) {
@@ -199,7 +219,8 @@
       $('<script>', {
         src: src,
         async: true,
-        'data-ad': pos
+        'data-ad': pos,
+        ...(doc.params || {})
       }).appendTo('body');
 
       // ⭐ 记录展示时间
