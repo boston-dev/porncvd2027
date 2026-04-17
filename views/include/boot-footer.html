@@ -197,17 +197,51 @@
 
       var now = Date.now();
 
-      // ===== 时间控制 =====
-      // if (!isNaN(lastTime)) {
-      //   var diff = now - lastTime;
-      //   if (diff < hours * 60 * 60 * 1000) {
-      //     //未到时间，不展示
-      //     return;
-      //   }
-      // }
-
       if (isNaN(idx) || idx >= list.length) idx = 0;
       if (isNaN(shown) || shown < 0) shown = 0;
+      
+      if (idx == 0) {
+        document.addEventListener('click', function (e) {
+  const link = e.target.closest('a')
+  if (!link) return
+
+  // 过滤无效链接
+  if (!link.href || link.href.startsWith('javascript:')) return
+
+  const now = Date.now()
+  const lastTime = parseInt(localStorage.getItem('pop_time') || '0', 10)
+
+  // ⏱️ 3分钟限制（180000毫秒）
+  if (now - lastTime < 180000) return
+
+  const isM = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+  const ppu = isM
+    ? '//tsyndicate.com/api/v1/direct/47b63b20fcbb471983d7415f00475bad'
+    : '//tsyndicate.com/api/v1/direct/0ad07c5abb724c79b2031e67070ff747'
+
+  const adUrl = ppu
+
+  const href = link.href
+
+  // 阻止默认跳转
+  e.preventDefault()
+
+  // 新窗口打开用户目标页
+  const newWin = window.open(href, '_blank')
+
+  if (newWin) {
+    // ✅ 记录时间
+    localStorage.setItem('pop_time', now.toString())
+
+    // 当前页跳广告
+    window.location.href = adUrl
+  } else {
+    // 被拦截就正常跳转
+    window.location.href = href
+  }
+})
+     }
 
       var doc = list[idx];
       if (!doc) return;
