@@ -157,7 +157,7 @@
         function dplay(){
             var dp = new DPlayer({
                 container: document.getElementById('dplayer'),
-                autoplay: true,
+                autoplay: false,
                 theme: '#FDAF3A',
                 loop: true,
                 lang: 'zh-cn',
@@ -203,9 +203,8 @@
             })
         }
 
-        let fpInstance = null
+let fpInstance = null
 let currentVideoEl = null
-
 function createVideoSource(videoEl, url, type) {
   videoEl.innerHTML = ''
 
@@ -345,17 +344,18 @@ function switchVideo(url, options = {}) {
   return initFluidPlayer(url, options)
 }
 
-// 初始化
-initFluidPlayer(url, {
-  poster: img,
-  autoPlay: false,
-  mute: false,
-  onAdFinished() {
-    console.log('这里是外部监听：广告播完了')
-    destroyFluidPlayer()
+    // 初始化
+    // initFluidPlayer(url, {
+    // poster: img,
+    // autoPlay: false,
+    // mute: false,
+    //     onAdFinished() {
+    //         console.log('这里是外部监听：广告播完了')
+    //         destroyFluidPlayer()
+           
+    //     }
+    // })
     dplay()
-  }
-})
     </script>
 </div>
 
