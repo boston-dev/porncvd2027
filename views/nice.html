@@ -61,14 +61,21 @@
 
         <div class="playerbox <%if(!video.url){%> hidden <%}%>" id="playerbox">
 
-            <nav id="dplayer">
+            <nav id="dplayer" style="height: 100%;width: 100%;">
                  <% if (meta?.jsonLd?.contentUrl) { %>
-<video width="1" height="1" muted preload="none" playsinline controls
-  style="position:absolute;left:-9999px;top:-9999px"
-  poster="<%= meta?.og?.image %>">
-  <source src="<%= meta?.jsonLd?.contentUrl %>" type="video/mp4">
-</video>
-<% } %>
+                <video width="1" height="1" muted preload="none" playsinline controls
+                style="position:absolute;left:-9999px;top:-9999px"
+                poster="<%= meta?.og?.image %>">
+                <source src="<%= meta?.jsonLd?.contentUrl %>" type="video/mp4">
+                </video>
+                <% } %>
+                 <video
+                id="video-player"
+                controls
+                playsinline
+                webkit-playsinline
+                style="width:100%;height:auto;background:#000;"
+                ></video>
             </nav>
         </div>
         <div >
@@ -147,50 +154,206 @@
         var time=0
         var isHls = types === 'm3u8' || /\.m3u8(\?|$)/i.test(url)
         
-        var dp = new DPlayer({
-  container: document.getElementById('dplayer'),
-  autoplay: false,
-  theme: '#FDAF3A',
-  loop: true,
-  lang: 'zh-cn',
-  screenshot: true,
-  hotkey: true,
-  preload: 'auto',
-  volume: 0.7,
-  mutex: true,
-  video: {
-    url: url,
-    pic: img,
-    thumbnails: img,
-    // 关键：m3u8 走 hls.js
-    type: isHls ? 'customHls' : 'auto',
-    customType: isHls ? {
-      customHls: function (video, player) {
-        if (window.Hls && Hls.isSupported()) {
-          // 清理旧实例（防止切换视频内存泄露）
-          if (video._hls) {
-            video._hls.destroy()
-            video._hls = null
-          }
-          var hls = new Hls({
-            // 需要的话再开，先保持默认最稳
-            // lowLatencyMode: false,
-          })
-          video._hls = hls
-          hls.loadSource(video.src)
-          hls.attachMedia(video)
+        function dplay(){
+            var dp = new DPlayer({
+                container: document.getElementById('dplayer'),
+                autoplay: true,
+                theme: '#FDAF3A',
+                loop: true,
+                lang: 'zh-cn',
+                screenshot: true,
+                hotkey: true,
+                preload: 'auto',
+                volume: 0.7,
+                mutex: true,
+                video: {
+                    url: url,
+                    pic: img,
+                    thumbnails: img,
+                    // 关键：m3u8 走 hls.js
+                    type: isHls ? 'customHls' : 'auto',
+                    customType: isHls ? {
+                    customHls: function (video, player) {
+                        if (window.Hls && Hls.isSupported()) {
+                        // 清理旧实例（防止切换视频内存泄露）
+                        if (video._hls) {
+                            video._hls.destroy()
+                            video._hls = null
+                        }
+                        var hls = new Hls({
+                            // 需要的话再开，先保持默认最稳
+                            // lowLatencyMode: false,
+                        })
+                        video._hls = hls
+                        hls.loadSource(video.src)
+                        hls.attachMedia(video)
 
-          hls.on(Hls.Events.ERROR, function (event, data) {
-            console.log('HLS error:', data)
-          })
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          // Safari 原生支持
-          video.src = video.src
-        } else {
-          console.log('This browser does not support HLS.')
+                        hls.on(Hls.Events.ERROR, function (event, data) {
+                            console.log('HLS error:', data)
+                        })
+                        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        // Safari 原生支持
+                        video.src = video.src
+                        } else {
+                        console.log('This browser does not support HLS.')
+                        }
+                    }
+                    } : undefined
+                }
+            })
+        }
+
+        let fpInstance = null
+let currentVideoEl = null
+
+function createVideoSource(videoEl, url, type) {
+  videoEl.innerHTML = ''
+
+  const source = document.createElement('source')
+  source.src = url
+  source.type = type || getVideoType(url)
+
+  videoEl.appendChild(source)
+}
+
+function getVideoType(url) {
+  if (/\.m3u8(\?|#|$)/i.test(url)) {
+    return 'application/x-mpegURL'
+  }
+  if (/\.mp4(\?|#|$)/i.test(url)) {
+    return 'video/mp4'
+  }
+  return 'video/mp4'
+}
+
+function destroyFluidPlayer() {
+  try {
+    if (fpInstance && typeof fpInstance.destroy === 'function') {
+      fpInstance.destroy()
+    }
+  } catch (err) {
+    console.warn('destroy fluid player error:', err)
+  }
+  fpInstance = null
+}
+
+function initFluidPlayer(url, options = {}) {
+  const videoEl = document.getElementById(options.id || 'video-player')
+  if (!videoEl) {
+    console.error('video element not found')
+    return
+  }
+
+  destroyFluidPlayer()
+
+  try {
+    videoEl.pause()
+  } catch (e) {}
+
+  videoEl.removeAttribute('src')
+  videoEl.load()
+
+  if (options.poster) {
+    videoEl.poster = options.poster
+  } else {
+    videoEl.removeAttribute('poster')
+  }
+
+  createVideoSource(videoEl, url, options.type)
+
+  fpInstance = fluidPlayer(videoEl.id, {
+    layoutControls: {
+      controlBar: {
+        autoHideTimeout: 3,
+        animated: true,
+        autoHide: true
+      },
+      autoPlay: !!options.autoPlay,
+      mute: !!options.mute,
+      allowTheatre: true,
+      playPauseAnimation: false,
+      playbackRateEnabled: false,
+      allowDownload: false,
+      playButtonShowing: true,
+      fillToContainer: true,
+      posterImage: options.poster || ''
+    },
+
+    vastOptions: {
+      adList: [
+        {
+          roll: 'preRoll',
+          vastTag: 'https://s.magsrv.com/v1/vast.php?idzone=5903154'
+        }
+      ],
+      adCTAText: false,
+      adCTATextPosition: '',
+
+      vastAdvanced: {
+        vastLoadedCallback: function () {
+          console.log('广告已加载')
+        },
+
+        noVastVideoCallback: function () {
+          console.log('没有可播放广告，直接播正片')
+        },
+
+        vastVideoSkippedCallback: function () {
+          console.log('广告被跳过')
+        },
+
+        vastVideoEndedCallback: function () {
+          console.log('广告播放完成')
+
+          // 这里写你广告播完后的逻辑
+          // 例如：上报、显示提示、触发跳转按钮、解锁某些功能等
+          if (typeof options.onAdFinished === 'function') {
+            options.onAdFinished()
+          }
         }
       }
-    } : undefined
+    },
+
+    modules: {
+      configureHls: function (hlsOptions) {
+        return Object.assign({}, hlsOptions, {
+          startLevel: -1,
+          autoStartLoad: true,
+          maxBufferLength: 30
+        })
+      }
+    }
+  })
+
+  currentVideoEl = videoEl
+
+  videoEl.load()
+
+  if (options.autoPlay) {
+    const p = videoEl.play()
+    if (p && typeof p.catch === 'function') {
+      p.catch(err => {
+        console.warn('autoplay blocked:', err)
+      })
+    }
+  }
+
+  return fpInstance
+}
+
+function switchVideo(url, options = {}) {
+  return initFluidPlayer(url, options)
+}
+
+// 初始化
+initFluidPlayer(url, {
+  poster: img,
+  autoPlay: false,
+  mute: false,
+  onAdFinished() {
+    console.log('这里是外部监听：广告播完了')
+    destroyFluidPlayer()
+    dplay()
   }
 })
     </script>
