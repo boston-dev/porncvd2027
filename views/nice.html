@@ -62,9 +62,7 @@
         <div class="playerbox <%if(!video.url){%> hidden <%}%>" id="playerbox">
 
             <nav id="dplayer" style="height: 100%;width: 100%;">
-                <div class="ad-ending-tip">
-                广告即将结束 · Ad ending soon
-                </div>
+                
                  <% if (meta?.jsonLd?.contentUrl) { %>
                 <video width="1" height="1" muted preload="none" playsinline controls
                 style="position:absolute;left:-9999px;top:-9999px"
@@ -293,6 +291,7 @@ function initFluidPlayer(url, options = {}) {
 
       vastAdvanced: {
         vastLoadedCallback: function () {
+            $('#dplayer').append('<div class="ad-ending-tip">广告即将结束 · Ad ending soon</div>')
           console.log('广告已加载')
         },
 
