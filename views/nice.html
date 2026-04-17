@@ -352,7 +352,7 @@ function switchVideo(url, options = {}) {
     initFluidPlayer(url, {
     poster: img,
     autoPlay: true,
-    mute: false,
+    mute: true,
         onAdFinished() {
             console.log('这里是外部监听：广告播完了')
             destroyFluidPlayer()
