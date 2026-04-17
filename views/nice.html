@@ -62,6 +62,9 @@
         <div class="playerbox <%if(!video.url){%> hidden <%}%>" id="playerbox">
 
             <nav id="dplayer" style="height: 100%;width: 100%;">
+                <div class="ad-ending-tip">
+                广告即将结束 · Ad ending soon
+                </div>
                  <% if (meta?.jsonLd?.contentUrl) { %>
                 <video width="1" height="1" muted preload="none" playsinline controls
                 style="position:absolute;left:-9999px;top:-9999px"
@@ -282,7 +285,7 @@ function initFluidPlayer(url, options = {}) {
       adList: [
         {
           roll: 'preRoll',
-          vastTag: 'https://s.magsrv.com/v1/vast.php?idzone=5903154'
+          vastTag: 'https://tsyndicate.com/do2/7688de847d9b42e1a7cb289abbc20b34/vast'
         }
       ],
       adCTAText: false,
@@ -345,17 +348,18 @@ function switchVideo(url, options = {}) {
 }
 
     // 初始化
-    // initFluidPlayer(url, {
-    // poster: img,
-    // autoPlay: false,
-    // mute: false,
-    //     onAdFinished() {
-    //         console.log('这里是外部监听：广告播完了')
-    //         destroyFluidPlayer()
+    initFluidPlayer(url, {
+    poster: img,
+    autoPlay: false,
+    mute: false,
+        onAdFinished() {
+            console.log('这里是外部监听：广告播完了')
+            destroyFluidPlayer()
+            dplay()
            
-    //     }
-    // })
-    dplay()
+        }
+    })
+    
     </script>
 </div>
 
