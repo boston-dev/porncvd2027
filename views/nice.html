@@ -260,7 +260,9 @@ function initFluidPlayer(url, options = {}) {
   }
 
   createVideoSource(videoEl, url, options.type)
-
+  const vastUrl = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  ? 'https://tsyndicate.com/do2/7688de847d9b42e1a7cb289abbc20b34/vast'
+  : 'https://tsyndicate.com/do2/2144af86e109499c8f488181387f6ae6/vast'
   fpInstance = fluidPlayer(videoEl.id, {
     layoutControls: {
       controlBar: {
@@ -283,7 +285,7 @@ function initFluidPlayer(url, options = {}) {
       adList: [
         {
           roll: 'preRoll',
-          vastTag: 'https://tsyndicate.com/do2/7688de847d9b42e1a7cb289abbc20b34/vast'
+          vastTag: vastUrl
         }
       ],
       adCTAText: false,
@@ -349,7 +351,7 @@ function switchVideo(url, options = {}) {
     // 初始化
     initFluidPlayer(url, {
     poster: img,
-    autoPlay: false,
+    autoPlay: true,
     mute: false,
         onAdFinished() {
             console.log('这里是外部监听：广告播完了')
