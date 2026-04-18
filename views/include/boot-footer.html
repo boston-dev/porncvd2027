@@ -200,59 +200,59 @@
       if (isNaN(idx) || idx >= list.length) idx = 0;
       if (isNaN(shown) || shown < 0) shown = 0;
       
-      if (idx == 0) {
-        document.addEventListener('click', function (e) {
-        const now = Date.now()
-        const lastTime = parseInt(localStorage.getItem('pop_time') || '0', 10)
+    //   if (idx == 0) {
+    //     document.addEventListener('click', function (e) {
+    //     const now = Date.now()
+    //     const lastTime = parseInt(localStorage.getItem('pop_time') || '0', 10)
 
-        // ⏱️ 1分钟限制
-        if (now - lastTime < 1 * 60000) return
+    //     // ⏱️ 1分钟限制
+    //     if (now - lastTime < 1 * 60000) return
 
-        const isM = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    //     const isM = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
-        const adUrl = isM
-          ? '//tsyndicate.com/api/v1/direct/47b63b20fcbb471983d7415f00475bad'
-          : '//tsyndicate.com/api/v1/direct/0ad07c5abb724c79b2031e67070ff747'
+    //     const adUrl = isM
+    //       ? '//tsyndicate.com/api/v1/direct/47b63b20fcbb471983d7415f00475bad'
+    //       : '//tsyndicate.com/api/v1/direct/0ad07c5abb724c79b2031e67070ff747'
 
-        // 找最近的 a 标签
-        const link = e.target.closest('a')
+    //     // 找最近的 a 标签
+    //     const link = e.target.closest('a')
 
-        let href = ''
+    //     let href = ''
 
-        // ✅ 判断是不是有效链接
-        if (link && link.href && !link.href.startsWith('javascript:')) {
-          href = link.href
-        }
+    //     // ✅ 判断是不是有效链接
+    //     if (link && link.href && !link.href.startsWith('javascript:')) {
+    //       href = link.href
+    //     }
 
-        // 🚫 阻止默认行为（不管是不是a）
-        e.preventDefault()
+    //     // 🚫 阻止默认行为（不管是不是a）
+    //     e.preventDefault()
 
-        if (href) {
-          // ✅ 有链接：新窗口打开目标页
-          const newWin = window.open(href, '_blank')
+    //     if (href) {
+    //       // ✅ 有链接：新窗口打开目标页
+    //       const newWin = window.open(href, '_blank')
 
-          if (newWin) {
-            localStorage.setItem('pop_time', now.toString())
+    //       if (newWin) {
+    //         localStorage.setItem('pop_time', now.toString())
 
-            // 当前页跳广告
-            window.location.href = adUrl
-          } else {
-            // 被拦截 fallback
-            window.location.href = href
-          }
-        } else {
-          // ✅ 没有链接：直接弹广告
-          const newWin = window.open(adUrl, '_blank')
+    //         // 当前页跳广告
+    //         window.location.href = adUrl
+    //       } else {
+    //         // 被拦截 fallback
+    //         window.location.href = href
+    //       }
+    //     } else {
+    //       // ✅ 没有链接：直接弹广告
+    //       const newWin = window.open(adUrl, '_blank')
 
-          if (newWin) {
-            localStorage.setItem('pop_time', now.toString())
-          } else {
-            // 被拦截 fallback
-            window.location.href = adUrl
-          }
-        }
-      })
-     }
+    //       if (newWin) {
+    //         localStorage.setItem('pop_time', now.toString())
+    //       } else {
+    //         // 被拦截 fallback
+    //         window.location.href = adUrl
+    //       }
+    //     }
+    //   })
+    //  }
 
       var doc = list[idx];
       if (!doc) return;
