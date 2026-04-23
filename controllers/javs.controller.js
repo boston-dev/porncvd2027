@@ -272,6 +272,9 @@ exports.genre = asyncHandler(async (req, res) => {
     totalPages: result.totalPages, // 你 paginate 的返回
     siteName: process.env.SITE_NAME,
   });
+   if (req.query.ajax) {
+    return res.send(result);
+  }
   return res.render("boot", result);
 });
 // 随机取一个“可播放”的视频（你按自己字段改筛选条件）
