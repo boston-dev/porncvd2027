@@ -558,7 +558,7 @@ exports.home = asyncHandler(async (req, res) => {
     lean: true,
     leanWithId: false,
   });
-  const userDoc = await getWatchingList({ siteArr, limit: 20 });
+  const userDoc = await getWatchingList({ siteArr, limit: 8 });
   Object.assign(result, {
     ...withPageRange(result, { prelink: "/?page=pageTpl" }),
     userVideo: {
