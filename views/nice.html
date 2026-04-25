@@ -204,12 +204,11 @@
             })
             var playStart = 0;
             var reported=false
-            dp.on('play', function () {
-              playStart = Date.now();
-            });
-            dp.on('timeupdate', async function () {
+            dp.on('timeupdate', function (utime) {
               if (reported) return;
-
+              if(playStart === 0){
+                playStart = Date.now();
+              }
               const playedSeconds = (Date.now() - playStart) / 1000;
 
               if (playedSeconds >= 10) {

@@ -614,29 +614,65 @@ exports.home = asyncHandler(async (req, res) => {
   return res.render("index", result);
 });
 
+
+const ONLINE_EXPIRE = 30 * 60 * 1000;
+const MAX_ONLINE_PER_VIDEO = 20;
+
 exports.view = asyncHandler(async (req, res) => {
   const { id } = req.body;
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      code: 1,
-    });
+    return res.status(400).json({ code: 1 });
   }
 
   const ip =
     req.headers["cf-connecting-ip"] ||
-    req.headers["x-forwarded-for"]?.split(",")[0] ||
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
     req.socket?.remoteAddress ||
     req.ip;
+
+  if (!ip) {
+    return res.status(400).json({ code: 1 });
+  }
+
+  const now = new Date();
+
+  const exists = await Online.exists({
+    vid: id,
+    ip,
+    expireAt: { $gt: now },
+  });
+
+  if (exists) {
+    return res.json({ code: 0, cached: true });
+  }
 
   await Online.updateOne(
     { vid: id, ip },
     {
       $set: {
-        expireAt: new Date(Date.now() + 30 * 60 * 1000),
+        vid: id,
+        ip,
+        expireAt: new Date(Date.now() + ONLINE_EXPIRE),
+        updatedAt: now,
       },
     },
-    { upsert: true },
+    { upsert: true }
   );
 
-  res.json({ code: 0 });
+  // 只查第21个以后的 _id，避免查太多字段
+  const oldList = await Online.find({ vid: id })
+    .sort({ updatedAt: -1 })
+    .skip(MAX_ONLINE_PER_VIDEO)
+    .limit(100)
+    .select("_id")
+    .lean();
+
+  if (oldList.length) {
+    await Online.deleteMany({
+      _id: { $in: oldList.map((item) => item._id) },
+    });
+  }
+
+  return res.json({ code: 0 });
 });
