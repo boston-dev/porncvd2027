@@ -500,7 +500,19 @@ exports.findMyTag = asyncHandler(async (req, res) => {
   res.send(JSON.stringify(agg, null, 2));
 });
 
+let watchingCache = {
+  data: [],
+  expire: 0
+};
+
 async function getWatchingList({ siteArr = [], limit = 10 }) {
+  const now = Date.now();
+
+  // 30秒内直接走内存
+  if (watchingCache.expire > now && watchingCache.data.length) {
+    return watchingCache.data;
+  }
+
   const watching = await Online.aggregate([
     {
       $group: {
@@ -514,15 +526,18 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 
   const ids = watching.map((v) => v._id);
 
-  const videos = await Jav.find({
-    _id: { $in: ids },
-    site: { $nin: siteArr },
-    disable: { $ne: 1 },
-  }).lean();
+  let list = [];
 
-  const map = new Map(videos.map((v) => [String(v._id), v]));
+  if (ids.length) {
+    const videos = await Jav.find({
+      _id: { $in: ids },
+      site: { $nin: siteArr },
+      disable: { $ne: 1 },
+    }).lean();
 
-  let list = ids.map((id) => map.get(String(id))).filter(Boolean);
+    const map = new Map(videos.map((v) => [String(v._id), v]));
+    list = ids.map((id) => map.get(String(id))).filter(Boolean);
+  }
 
   if (list.length < limit) {
     const existIds = list.map((v) => v._id);
@@ -539,7 +554,14 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
     list = list.concat(fillList);
   }
 
-  return list.slice(0, limit);
+  list = list.slice(0, limit);
+
+  watchingCache = {
+    data: list,
+    expire: now +2* 60 * 1000,
+  };
+
+  return list;
 }
 
 exports.home = asyncHandler(async (req, res) => {
@@ -558,7 +580,13 @@ exports.home = asyncHandler(async (req, res) => {
     lean: true,
     leanWithId: false,
   });
-  const userDoc = await getWatchingList({ siteArr, limit: 8 });
+  let userDoc = [];
+  try {
+    userDoc = await getWatchingList({ siteArr, limit: 8 });
+  } catch (e) {
+    console.error("getWatchingList error:", e.message);
+    userDoc = [];
+  }
   Object.assign(result, {
     ...withPageRange(result, { prelink: "/?page=pageTpl" }),
     userVideo: {
