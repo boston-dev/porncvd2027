@@ -502,7 +502,7 @@ exports.findMyTag = asyncHandler(async (req, res) => {
 
 let watchingCache = {
   data: [],
-  expire: 0
+  expire: 0,
 };
 
 async function getWatchingList({ siteArr = [], limit = 10 }) {
@@ -558,7 +558,7 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 
   watchingCache = {
     data: list,
-    expire: now +2* 60 * 1000,
+    expire: now + 3 * 60 * 1000,
   };
 
   return list;
