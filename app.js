@@ -7,6 +7,7 @@ const compression = require("compression");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const gNav = require("./nav.json");
+const crypto = require("./middleware/crypto");
 const genreNav = require("./genreNav.json");
 const routes = require("./routes");
 const { requestId, requestLogger } = require("./middleware/requestLogger");
@@ -64,6 +65,7 @@ function isMobile(req) {
 
 app.use(async (req, res, next) => {
   // 是否简体页面（只判断路由前缀）
+  res.locals.IndexSite =crypto.getSiteUrl(req);
   res.locals.isCN = req.path.startsWith("/zh-CN");
   res.locals.basePath = res.locals.isCN ? "/zh-CN" : "";
   res.locals.isMobile = isMobile(req);

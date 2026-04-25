@@ -24,6 +24,7 @@
 
 const zlib = require("zlib");
 const Jav = require("../models/Jav");
+const crypto = require("../middleware/crypto");
 const ESSENCE = require("./tags_top200.json");
 const ENTRY_TAGS = new Set(ESSENCE.map((x) => x.tag));
 const navs = require("../nav.json");
@@ -72,22 +73,6 @@ async function cached(key, ttl, fn) {
   return val;
 }
 
-// =======================
-// 工具函数
-// =======================
-function getSiteUrl(req) {
-  const fixed = process.env.SITE_URL;
-  if (fixed) return fixed.replace(/\/+$/, "");
-
-  const proto = (req.headers["x-forwarded-proto"] || req.protocol || "https")
-    .split(",")[0]
-    .trim();
-  const host = (req.headers["x-forwarded-host"] || req.headers.host || "")
-    .split(",")[0]
-    .trim();
-
-  return `${proto}://${host}`.replace(/\/+$/, "");
-}
 function normalizeTagInput(s) {
   let t = String(s ?? "").trim();
 
@@ -134,7 +119,7 @@ function sendXml(res, xml, isGz) {
 // robots.txt
 // =======================
 exports.robots = async (req, res) => {
-  const site = getSiteUrl(req);
+  const site = crypto.getSiteUrl(req);
   res.type("text/plain; charset=utf-8");
   res.send(`User-agent: *
 Allow: /
@@ -147,7 +132,7 @@ Sitemap: ${site}/sitemap.xml
 // 1) sitemap index（只暴露 3 个入口）
 // =======================
 exports.sitemapIndex = async (req, res) => {
-  const site = getSiteUrl(req);
+  const site = crypto.getSiteUrl(req);
   const isGz = wantsGzip(req);
   const key = `smi:${site}`;
 
@@ -158,7 +143,7 @@ exports.sitemapIndex = async (req, res) => {
     const javsLoc = `${site}/sitemap-javs.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
-    
+
     const items =
       `<sitemap><loc>${javsLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${hanimeLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
@@ -179,7 +164,7 @@ ${items}
 //    - 既照顾新内容收录，又避免全量清单被扫
 // =======================
 exports.sitemapJavsMix = async (req, res) => {
-  const site = getSiteUrl(req);
+  const site = crypto.getSiteUrl(req);
   const isGz = wantsGzip(req);
 
   // 防止配错：确保 RANDOM >= 0
@@ -266,7 +251,7 @@ ${urls}
   return sendXml(res, xml, isGz);
 };
 exports.sitemapHanime = async (req, res) => {
-  const site = getSiteUrl(req);
+  const site = crypto.getSiteUrl(req);
   const isGz = wantsGzip(req);
 
   // 防止配错：确保 RANDOM >= 0
@@ -352,7 +337,7 @@ ${urls}
 //    - 把“长尾 tag 清单”从 sitemap 移除，降低被脚本顺藤摸瓜
 // =======================
 exports.sitemapTagTop = async (req, res) => {
-  const site = getSiteUrl(req);
+  const site = crypto.getSiteUrl(req);
   const isGz = wantsGzip(req);
   const TOP = Math.max(0, SITEMAP_TAG_TOP);
 
@@ -487,7 +472,7 @@ ${urls}
 exports.sitemapJavsShard = async (req, res) => {
   if (!ALLOW_SHARDED_SITEMAP) return res.status(404).send("not found");
 
-  const site = getSiteUrl(req);
+  const site = crypto.getSiteUrl(req);
   const isGz = wantsGzip(req);
 
   const shardRaw = String(req.params.shard || "1");
