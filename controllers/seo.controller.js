@@ -391,7 +391,6 @@ exports.sitemapTagTop = async (req, res) => {
         if (!ENTRY_TAGS.has(norm)) return false;
         return true;
       });
-    console.log(agg);
     // tag sitemap 里的 lastmod：用“今天”即可（tag 页不是具体作品）
     const today = ymd(new Date());
 
