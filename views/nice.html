@@ -202,6 +202,25 @@
                     } : undefined
                 }
             })
+            var playStart = 0;
+            var reported=false
+            dp.on('play', function () {
+              playStart = Date.now();
+            });
+            dp.on('timeupdate', async function () {
+              if (reported) return;
+
+              const playedSeconds = (Date.now() - playStart) / 1000;
+
+              if (playedSeconds >= 10) {
+                 fetch('/view/online.html', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: location.pathname.match(/\/javs\/(.+)\.html$/)?.[1] })
+                });
+                reported=true
+              }
+            });
         }
 
 let fpInstance = null

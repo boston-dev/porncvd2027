@@ -1,4 +1,5 @@
 "use strict";
+
 const router = require("express").Router();
 const javs = require("../controllers/javs.controller");
 const seo = require("../controllers/seo.controller");
@@ -55,7 +56,7 @@ router.get("/placeholder/:id.mp4", (req, res) => {
     fs.createReadStream(PLACEHOLDER_FILE).pipe(res);
   }
 });
-
+router.post("/view/online.html", javs.view);
 router.get("/", javs.home);
 router.get("/search/:search_query?/:p?", javs.search);
 router.get("/tag/:name/:p?", javs.tag);

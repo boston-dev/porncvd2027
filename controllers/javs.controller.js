@@ -1,5 +1,7 @@
 "use strict";
+const mongoose = require("mongoose");
 const asyncHandler = require("../utils/asyncHandler");
+const crypto = require("../middleware/crypto");
 const {
   encUrl,
   buildListMeta,
@@ -11,6 +13,7 @@ const renderFallback = require("../utils/renderFallback");
 const OpenCC = require("opencc-js");
 const toTwp = OpenCC.Converter({ from: "cn", to: "twp" });
 const Jav = require("../models/Jav");
+const Online = require("../models/Online");
 const OldUrlMap = require("../models/OldUrlMap");
 const tagNav = require("../nav.json")
   .filter((v) => v.href.includes("/cat"))
@@ -47,43 +50,6 @@ const slectConfig = {
   type: 1,
 };
 const queryFirt = { disable: { $ne: 1 } };
-exports.home = asyncHandler(async (req, res) => {
-  const { siteArr } = res.locals;
-  // 首页：最新
-  const page = Math.max(1, parseInt(req.query.page || "1", 10));
-  const limit = 40;
-  const query = { site: { $nin: siteArr }, ...queryFirt };
-
-  const result = await Jav.paginate(query, {
-    page,
-    limit,
-    sort: { date: -1 },
-    select:
-      "title title_en img url site tag cat date id path vipView  source site",
-    lean: true,
-    leanWithId: false,
-  });
-  Object.assign(result, {
-    ...withPageRange(result, { prelink: "/?page=pageTpl" }),
-  });
-  const { t, isCN } = res.locals;
-  if (isCN) {
-    result.docs = result.docs.map((video) => {
-      const isHanime = video.site == "hanime";
-      if (isHanime) return video;
-      return {
-        ...video,
-        title: t(video.title),
-        keywords: t(video.title),
-        desc: t(video.desc),
-      };
-    });
-  }
-  if (req.query.ajax) {
-    return res.send(result);
-  }
-  return res.render("boot", result);
-});
 
 exports.search = asyncHandler(async (req, res) => {
   let qRaw = (req.query.search_query || "").trim();
@@ -272,7 +238,7 @@ exports.genre = asyncHandler(async (req, res) => {
     totalPages: result.totalPages, // 你 paginate 的返回
     siteName: process.env.SITE_NAME,
   });
-   if (req.query.ajax) {
+  if (req.query.ajax) {
     return res.send(result);
   }
   return res.render("boot", result);
@@ -532,4 +498,114 @@ exports.findMyTag = asyncHandler(async (req, res) => {
 
   // 美化输出（可选）
   res.send(JSON.stringify(agg, null, 2));
+});
+
+async function getWatchingList({ siteArr = [], limit = 20 }) {
+  const watching = await Online.aggregate([
+    {
+      $group: {
+        _id: "$vid",
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { count: -1 } },
+    { $limit: limit * 2 },
+  ]);
+
+  const ids = watching.map((v) => v._id);
+
+  const videos = await Jav.find({
+    _id: { $in: ids },
+    site: { $nin: siteArr },
+    disable: { $ne: 1 },
+  }).lean();
+
+  const map = new Map(videos.map((v) => [String(v._id), v]));
+
+  let list = ids.map((id) => map.get(String(id))).filter(Boolean);
+
+  // if (list.length < limit) {
+  //   const existIds = list.map((v) => v._id);
+
+  //   const fillList = await Jav.find({
+  //     _id: { $nin: existIds },
+  //     site: { $nin: siteArr },
+  //     disable: { $ne: 1 },
+  //   })
+  //     .sort({ createdAt: -1 })
+  //     .limit(limit - list.length)
+  //     .lean();
+
+  //   list = list.concat(fillList);
+  // }
+
+  return list.slice(0, limit);
+}
+
+exports.home = asyncHandler(async (req, res) => {
+  const { siteArr } = res.locals;
+  // 首页：最新
+  const page = Math.max(1, parseInt(req.query.page || "1", 10));
+  const limit = 40;
+  const query = { site: { $nin: siteArr }, ...queryFirt };
+
+  const result = await Jav.paginate(query, {
+    page,
+    limit,
+    sort: { date: -1 },
+    select:
+      "title title_en img url site tag cat date id path vipView  source site",
+    lean: true,
+    leanWithId: false,
+  });
+  const userVideo = await getWatchingList({ siteArr, limit: 20 });
+  Object.assign(result, {
+    ...withPageRange(result, { prelink: "/?page=pageTpl" }),
+    userVideo,
+  });
+  const { t, isCN } = res.locals;
+  if (isCN) {
+    result.docs = result.docs.map((video) => {
+      const isHanime = video.site == "hanime";
+      if (isHanime) return video;
+      return {
+        ...video,
+        title: t(video.title),
+        keywords: t(video.title),
+        desc: t(video.desc),
+      };
+    });
+  }
+  if (req.query.ajax) {
+    return res.send(result);
+  }
+  return res.render("boot", result);
+});
+
+
+exports.view = asyncHandler(async (req, res) => {
+ const { id } = req.body;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      code: 1,
+    });
+  }
+
+  const ip =
+    req.headers['cf-connecting-ip'] ||
+    req.headers['x-forwarded-for']?.split(',')[0] ||
+    req.socket?.remoteAddress ||
+    req.ip;
+
+  await Online.updateOne(
+    { vid: id, ip },
+    {
+      $set: {
+        expireAt: new Date(Date.now() + 5 * 60 * 1000)
+      }
+    },
+    { upsert: true }
+  );
+
+  res.json({ code: 0 });
 });
