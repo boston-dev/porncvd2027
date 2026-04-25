@@ -579,6 +579,7 @@ exports.home = asyncHandler(async (req, res) => {
       };
     });
   }
+  res.locals.meta.canonical = crypto.getSiteUrl(req);
   if (req.query.ajax) {
     return res.send(result);
   }
