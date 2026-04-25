@@ -211,7 +211,7 @@
               }
               const playedSeconds = (Date.now() - playStart) / 1000;
 
-              if (playedSeconds >= 10) {
+              if (playedSeconds >= 15) {
                  fetch('/view/online.html', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
