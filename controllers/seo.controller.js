@@ -51,7 +51,7 @@ const SITEMAP_TAG_TTL_MS = Number(
 );
 
 // tag sitemap：只输出 Top 标签（按出现次数 cnt 排序）
-const SITEMAP_TAG_TOP = Number(process.env.SITEMAP_TAG_TOP || 5000);
+const SITEMAP_TAG_TOP = Number(process.env.SITEMAP_TAG_TOP || 50);
 
 // 是否允许旧版 shard（强烈建议默认 0）
 const ALLOW_SHARDED_SITEMAP =
@@ -158,10 +158,11 @@ exports.sitemapIndex = async (req, res) => {
     const javsLoc = `${site}/sitemap-javs.xml`;
     const tagLoc = `${site}/sitemap-tag.xml`;
     const catLoc = `${site}/sitemap-cat.xml`;
-    // `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
+    
     const items =
       `<sitemap><loc>${javsLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${hanimeLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
+      `<sitemap><loc>${tagLoc}</loc><lastmod>${now}</lastmod></sitemap>` +
       `<sitemap><loc>${catLoc}</loc><lastmod>${now}</lastmod></sitemap>`;
 
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -434,12 +435,10 @@ exports.sitemapCat = async (req, res) => {
   cats.push({
     href: "/cat/TWZP/",
   });
-
-  const zhCH = cats.map((v) => ({ ...v, href: "/zh-CN" + v.href }));
   cats.push({
     href: `/cat/${encodeURIComponent("custom udon")}/`,
   });
-  cats = [...zhCH, ...cats];
+  cats = [...cats];
 
   const toLoc = (href) => {
     if (!href) return null;
