@@ -632,7 +632,7 @@ exports.view = asyncHandler(async (req, res) => {
     { vid: id, ip },
     {
       $set: {
-        expireAt: new Date(Date.now() + 5 * 60 * 1000),
+        expireAt: new Date(Date.now() + 30 * 60 * 1000),
       },
     },
     { upsert: true },
