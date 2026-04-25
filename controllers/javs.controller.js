@@ -500,7 +500,7 @@ exports.findMyTag = asyncHandler(async (req, res) => {
   res.send(JSON.stringify(agg, null, 2));
 });
 
-async function getWatchingList({ siteArr = [], limit = 20 }) {
+async function getWatchingList({ siteArr = [], limit = 10 }) {
   const watching = await Online.aggregate([
     {
       $group: {
@@ -524,20 +524,20 @@ async function getWatchingList({ siteArr = [], limit = 20 }) {
 
   let list = ids.map((id) => map.get(String(id))).filter(Boolean);
 
-  // if (list.length < limit) {
-  //   const existIds = list.map((v) => v._id);
+  if (list.length < limit) {
+    const existIds = list.map((v) => v._id);
 
-  //   const fillList = await Jav.find({
-  //     _id: { $nin: existIds },
-  //     site: { $nin: siteArr },
-  //     disable: { $ne: 1 },
-  //   })
-  //     .sort({ createdAt: -1 })
-  //     .limit(limit - list.length)
-  //     .lean();
+    const fillList = await Jav.find({
+      _id: { $nin: existIds },
+      site: { $nin: siteArr },
+      disable: { $ne: 1 },
+    })
+      .sort({ createdAt: -1 })
+      .limit(limit - list.length)
+      .lean();
 
-  //   list = list.concat(fillList);
-  // }
+    list = list.concat(fillList);
+  }
 
   return list.slice(0, limit);
 }
@@ -558,10 +558,13 @@ exports.home = asyncHandler(async (req, res) => {
     lean: true,
     leanWithId: false,
   });
-  const userVideo = await getWatchingList({ siteArr, limit: 20 });
+  const userDoc = await getWatchingList({ siteArr, limit: 20 });
   Object.assign(result, {
     ...withPageRange(result, { prelink: "/?page=pageTpl" }),
-    userVideo,
+    userVideo: {
+      docs: userDoc,
+      title: "現正熱播中",
+    },
   });
   const { t, isCN } = res.locals;
   if (isCN) {
@@ -579,12 +582,11 @@ exports.home = asyncHandler(async (req, res) => {
   if (req.query.ajax) {
     return res.send(result);
   }
-  return res.render("boot", result);
+  return res.render("index", result);
 });
 
-
 exports.view = asyncHandler(async (req, res) => {
- const { id } = req.body;
+  const { id } = req.body;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       code: 1,
@@ -592,8 +594,8 @@ exports.view = asyncHandler(async (req, res) => {
   }
 
   const ip =
-    req.headers['cf-connecting-ip'] ||
-    req.headers['x-forwarded-for']?.split(',')[0] ||
+    req.headers["cf-connecting-ip"] ||
+    req.headers["x-forwarded-for"]?.split(",")[0] ||
     req.socket?.remoteAddress ||
     req.ip;
 
@@ -601,10 +603,10 @@ exports.view = asyncHandler(async (req, res) => {
     { vid: id, ip },
     {
       $set: {
-        expireAt: new Date(Date.now() + 5 * 60 * 1000)
-      }
+        expireAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
     },
-    { upsert: true }
+    { upsert: true },
   );
 
   res.json({ code: 0 });
