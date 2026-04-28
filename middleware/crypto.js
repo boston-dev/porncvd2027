@@ -57,5 +57,5 @@ exports.verifyOnlineToken = ({ token, vid, ip, ua }) => {
 exports.getSiteUrl = (req) => {
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
 const host = req.get('host');
-const SITE = `${protocol}://${host}`;
+ return `${protocol}://${host}`;
 };
