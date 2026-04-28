@@ -52,7 +52,7 @@ const SITEMAP_TAG_TTL_MS = Number(
 );
 
 // tag sitemap：只输出 Top 标签（按出现次数 cnt 排序）
-const SITEMAP_TAG_TOP = Number(process.env.SITEMAP_TAG_TOP || 100);
+const SITEMAP_TAG_TOP = Number(process.env.SITEMAP_TAG_TOP || 300);
 
 // 是否允许旧版 shard（强烈建议默认 0）
 const ALLOW_SHARDED_SITEMAP =
@@ -399,7 +399,7 @@ ${urls}
 // 4) 分类/栏目 sitemap（保留你原逻辑）
 // =======================
 exports.sitemapCat = async (req, res) => {
-  const site = process.env.SITE_URL || `https://${req.hostname}`;
+  const site = `https://${req.hostname}`;
 
   let catsRaw = ([...navs] || []).filter((v) => {
     return !v.href?.includes("http");
