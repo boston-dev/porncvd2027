@@ -52,7 +52,7 @@ const SITEMAP_TAG_TTL_MS = Number(
 );
 
 // tag sitemap：只输出 Top 标签（按出现次数 cnt 排序）
-const SITEMAP_TAG_TOP = Number(process.env.SITEMAP_TAG_TOP || 300);
+const SITEMAP_TAG_TOP = Number(process.env.SITEMAP_TAG_TOP || 2600);
 
 // 是否允许旧版 shard（强烈建议默认 0）
 const ALLOW_SHARDED_SITEMAP =
