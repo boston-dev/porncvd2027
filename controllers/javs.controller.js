@@ -582,12 +582,12 @@ exports.home = asyncHandler(async (req, res) => {
     leanWithId: false,
   });
   let userDoc = [];
-  try {
-    userDoc = await getWatchingList({ siteArr, limit: 8 });
-  } catch (e) {
-    console.error("getWatchingList error:", e.message);
-    userDoc = [];
-  }
+  // try {
+  //   userDoc = await getWatchingList({ siteArr, limit: 8 });
+  // } catch (e) {
+  //   console.error("getWatchingList error:", e.message);
+  //   userDoc = [];
+  // }
   Object.assign(result, {
     ...withPageRange(result, { prelink: "/?page=pageTpl" }),
     userVideo: {
@@ -620,6 +620,7 @@ const ONLINE_EXPIRE = 30 * 60 * 1000;
 const MAX_ONLINE_PER_VIDEO = 20;
 
 exports.view = asyncHandler(async (req, res) => {
+  return res.status(400).json({ code: 1 });
   const { id } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
