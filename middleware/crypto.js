@@ -55,15 +55,7 @@ exports.verifyOnlineToken = ({ token, vid, ip, ua }) => {
   }
 };
 exports.getSiteUrl = (req) => {
-  const fixed = process.env.SITE_URL;
-  if (fixed) return fixed.replace(/\/+$/, "");
-
-  const proto = (req.headers["x-forwarded-proto"] || req.protocol || "https")
-    .split(",")[0]
-    .trim();
-  const host = (req.headers["x-forwarded-host"] || req.headers.host || "")
-    .split(",")[0]
-    .trim();
-
-  return `${proto}://${host}`.replace(/\/+$/, "");
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+const host = req.get('host');
+const SITE = `${protocol}://${host}`;
 };

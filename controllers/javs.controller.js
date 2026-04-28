@@ -333,7 +333,8 @@ exports.detail = [
       })
       .lean();
 
-    const SITE = process.env.SITE_URL || "https://porncvd.com";
+
+  const SITE = crypto.getSiteUrl(req)
 
     const url = `${SITE}${res.locals.basePath}/javs/${video._id}.html`;
     let title = sanitizeUnicode(video.title || "Video");
