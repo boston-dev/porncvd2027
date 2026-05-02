@@ -47,49 +47,9 @@
 <script>
   $(function () {
     var repeatTimes = 2;
-    var hasLoaded = false;
-    var scrollTimer = null;
-    var fallbackTimer = null;
 
-    // 统一触发，只执行一次
-    function triggerLoadAds() {
-      if (hasLoaded) return;
-      hasLoaded = true;
+    loadAds();
 
-      $(window).off('scroll', onScroll);
-      if (fallbackTimer) {
-        clearTimeout(fallbackTimer);
-        fallbackTimer = null;
-      }
-
-      loadAds();
-    }
-
-    // 滚动触发
-    function onScroll() {
-      if (hasLoaded) return;
-
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function () {
-        var scrollTop = $(window).scrollTop();
-        var windowHeight = $(window).height();
-        var docHeight = $(document).height();
-
-        var percent = (scrollTop + windowHeight) / docHeight;
-
-        // 滚动到 35% 触发
-        if (percent >= 0.35) {
-          triggerLoadAds();
-        }
-      }, 80);
-    }
-
-    $(window).on('scroll', onScroll);
-
-    // 停留时间兜底：4 秒后还没触发就请求
-    fallbackTimer = setTimeout(function () {
-      triggerLoadAds();
-    }, 1800);
     function getDeviceType() {
       const ua = navigator.userAgent;
 
@@ -133,10 +93,16 @@
 
           if (Array.isArray(listLeft) && listLeft.length) {
             //rotateAds({ list: listLeft, pos: 'left', repeatTimes: repeatTimes });
-            rotateAdsUs({ list: listLeft, pos: 'left', repeatTimes: 1 });
+            setTimeout(function(){
+              rotateAdsUs({ list: listLeft, pos: 'left', repeatTimes: 1 });
+            },300)
+            
           }
           if (Array.isArray(usList) && usList.length) {
-            rotateAdsUs({ list: usList, pos: 'uscode', repeatTimes: 1 });
+            setTimeout(function(){
+              rotateAdsUs({ list: usList, pos: 'uscode', repeatTimes: 1 });
+            },300)
+            
           }
         },
         error: function (xhr) {
