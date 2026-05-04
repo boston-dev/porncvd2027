@@ -56,9 +56,9 @@ function withPageRange(data, option = {}, size = 3) {
   let range = [...left, ...current];
 
   // 补齐尾页
-  if (totalPages >= 1 && range.findIndex(v => v.text == totalPages) < 0) {
-    range.push({ href: makeHref(totalPages), text: totalPages });
-  }
+  // if (totalPages >= 1 && range.findIndex(v => v.text == totalPages) < 0) {
+  //   range.push({ href: makeHref(totalPages), text: totalPages });
+  // }
 
   // 补齐首页
   if (range.findIndex(v => v.text == 1) < 0) {
