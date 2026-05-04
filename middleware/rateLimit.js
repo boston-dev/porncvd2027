@@ -39,22 +39,44 @@ function withPageRange(data, option = {}) {
       href: makeHref(page - 1),
       text: "‹",
       class: "prev",
+      rel: "prev",
       ariaLabel: "Previous page",
     });
   }
 
-  range.push({
-    href: "",
-    text: page,
-    class: "active",
-    ariaLabel: `Page ${page}`,
-  });
+  const pages = new Set();
+
+  // 第一页永远显示
+  pages.add(1);
+
+  // 上一页：当前页大于1，就一定存在
+  if (page > 1) pages.add(page - 1);
+
+  // 当前页
+  pages.add(page);
+
+  // 下一页：只有 hasNextPage 才能证明存在
+  if (hasNextPage) pages.add(page + 1);
+
+  const pageList = [...pages]
+    .filter((num) => num > 0)
+    .sort((a, b) => a - b);
+
+  for (const num of pageList) {
+    range.push({
+      href: num === page ? "" : makeHref(num),
+      text: num,
+      class: num === page ? "active" : "",
+      ariaLabel: `Page ${num}`,
+    });
+  }
 
   if (hasNextPage) {
     range.push({
       href: makeHref(page + 1),
       text: "›",
       class: "next",
+      rel: "next",
       ariaLabel: "Next page",
     });
   }
@@ -64,7 +86,6 @@ function withPageRange(data, option = {}) {
     range,
   };
 }
-
 async function fastPageQuery(
   Model,
   query,

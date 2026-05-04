@@ -54,7 +54,7 @@ function buildPrelinkByUrl(req, pageTpl = "pageTpl") {
 const queryFirt = {
   disable: { $ne: 1 },
 };
-
+const listSkip=120000 
 const LIST_SELECT =
   "title title_en img url site tag cat date id path vipView source";
 
@@ -214,7 +214,7 @@ exports.tag = asyncHandler(async (req, res) => {
     limit,
     sort: { date: -1 },
     select: LIST_SELECT,
-    maxSkip: 4000,
+    maxSkip: listSkip,
   });
 
   result.name = name;
@@ -292,7 +292,7 @@ exports.genre = asyncHandler(async (req, res) => {
     limit,
     sort: { date: -1 },
     select: LIST_SELECT,
-    maxSkip: 4000,
+    maxSkip: listSkip,
   });
 
   Object.assign(result, {
@@ -777,7 +777,7 @@ exports.home = asyncHandler(async (req, res) => {
       date: -1,
     },
     select: LIST_SELECT,
-    maxSkip: 4000,
+    maxSkip: listSkip,
   });
 
   let userDoc = [];
