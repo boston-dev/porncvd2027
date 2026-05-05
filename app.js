@@ -145,7 +145,7 @@ app.use(errorHandler);
 
 /** --- Mongo connect with backoff (avoid infinite crash-loop) --- */
 async function connectMongoWithRetry() {
-  const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/downM3u8";
+  const uri = process.env.MONGO_URI;
   const opts = {
     autoIndex: false,
     serverSelectionTimeoutMS: 8000,
