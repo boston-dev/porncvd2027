@@ -1,5 +1,15 @@
 "use strict";
+const dotenv= require("dotenv"); 
 
+// 根据环境自动加载
+dotenv.config({
+  path: `.env.${process.env.NODE_ENV || 'development'}`
+})
+
+// 再加载通用
+dotenv.config()
+
+console.log(process.env.siteArr)
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");
@@ -69,7 +79,7 @@ app.use(async (req, res, next) => {
   res.locals.isCN = req.path.startsWith("/zh-CN");
   res.locals.basePath = res.locals.isCN ? "/zh-CN" : "";
   res.locals.isMobile = isMobile(req);
-  res.locals.siteArr = ["hanime"];
+  res.locals.siteArr = process.env.siteArr;
   res.locals.gNav = gNav;
   res.locals.isProd = process.env.NODE_ENV === "production";
   res.locals.t = (s) => {
@@ -135,7 +145,7 @@ app.use(errorHandler);
 
 /** --- Mongo connect with backoff (avoid infinite crash-loop) --- */
 async function connectMongoWithRetry() {
-  const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/downM3u8";
+  const uri = process.env.MONGO_URI;
   const opts = {
     autoIndex: false,
     serverSelectionTimeoutMS: 8000,
