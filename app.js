@@ -1,5 +1,15 @@
 "use strict";
+const dotenv= require("dotenv"); 
 
+// 根据环境自动加载
+dotenv.config({
+  path: `.env.${process.env.NODE_ENV || 'development'}`
+})
+
+// 再加载通用
+dotenv.config()
+
+console.log(process.env.PORT)
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");
