@@ -10,6 +10,7 @@ const {
 } = require("../utils/buildMeta");
 const { detailLimiter, withPageRange } = require("../middleware/rateLimit");
 const renderFallback = require("../utils/renderFallback");
+const pageCache = require("../utils/pageCache");
 const OpenCC = require("opencc-js");
 const toTwp = OpenCC.Converter({ from: "cn", to: "twp" });
 const Jav = require("../models/Jav");
@@ -119,77 +120,110 @@ function buildPrelinkByUrl(req, pageTpl = "pageTpl") {
 exports.tag = asyncHandler(async (req, res) => {
   const site = decodeURIComponent((req.query.site || "").trim());
   const rawName = decodeURIComponent((req.params.name || "").trim());
-  let name = rawName.toLowerCase(); // ✅ 统一成小写
+  let name = rawName.toLowerCase();
+
   const findWord = tagNav.find((v) => v.p == name);
-  if (findWord) {
-    name = findWord.text;
-  }
+  if (findWord) name = findWord.text;
+
   const page = Math.max(1, parseInt(req.params.p || "1", 10));
   const limit = 40;
 
-  if (!name)
-    return renderFallback(req, res, { status: 404, view: "boot", limit: 16 });
+  if (!name) {
+    return renderFallback(req, res, {
+      status: 404,
+      view: "boot",
+      limit: 16,
+    });
+  }
+
+  const { t, isCN } = res.locals;
+  const isAjax = !!req.query.ajax;
+  const lang = isCN ? "cn" : "tw";
+  const type = req.path.includes("/cat/") ? "cat" : "tag";
+  const cacheKey = [type, isAjax ? "json" : "html", lang, site || "all", name, page].join(":");
+
+  if (!isAjax) {
+    const htmlPath = pageCache.makeTagHtmlPath({ lang, type, name, page, site });
+    const diskHtml = await pageCache.readHtml(htmlPath);
+    if (diskHtml) {
+      res.setHeader("X-Page-Cache", "DISK");
+      res.setHeader("Cache-Control", "public, max-age=180");
+      return res.send(diskHtml);
+    }
+  }
+
+  const memCached = pageCache.getMemory(cacheKey);
+  if (memCached) {
+    res.setHeader("X-Page-Cache", "MEMORY");
+    if (isAjax) return res.json(memCached);
+    return res.send(memCached);
+  }
+
   let keywords = Array.isArray(name) ? name : [name];
+
   if (name.includes("台灣")) keywords.push("台灣");
   if (name.includes("twzp")) keywords.push("TWZP");
   if (name.includes("custom udon")) keywords.push("Custom Udon");
 
   keywords = [...new Set(keywords)];
+
   const optRegexp = keywords
     .filter(Boolean)
     .map((k) => new RegExp(escapeRegExp(k.trim()), "i"));
 
-  let query = optRegexp.length ? { tag: { $in: optRegexp } } : {}; // 没关键词就不加条件，避免 $in: []
+  let query = optRegexp.length ? { tag: { $in: optRegexp } } : {};
   let prelink = buildPrelinkByUrl(req);
+
   Object.assign(query, queryFirt);
+
   if (site) {
     res.locals.curSite = site;
-    Object.assign(query, {
-      site,
-    });
-    prelink.includes("?")
-      ? (prelink += `&site=${site}`)
-      : (prelink += `?site=${site}`);
+    Object.assign(query, { site });
+    prelink.includes("?") ? (prelink += `&site=${site}`) : (prelink += `?site=${site}`);
   }
+
   if (name == "porn5f") {
-    query = {
-      site: "5f",
-    };
+    query = { site: "5f", ...queryFirt };
   }
+
   const result = await Jav.paginate(query, {
     page,
     limit,
     sort: { date: -1 },
-    select:
-      "title title_en img url site tag cat date id path vipView  source site",
+    select: "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
+
   result.name = name;
+
   res.locals.meta = buildListMeta({
     req,
-    type: req.path.startsWith("/tag") ? "tag" : "cat",
+    type,
     name,
     page,
-    totalPages: result.totalPages, // 你 paginate 的返回
+    totalPages: result.totalPages,
     siteName: process.env.SITE_NAME,
   });
+
   res.locals.meta = {
     ...res.locals.meta,
     titlePage: `${name}视频合集`,
     descPage: `
-      这里整理了与「${name} 相关的精选视频资源，内容更新及时，分类清晰，
+      这里整理了与「${name}」相关的精选视频资源，内容更新及时，分类清晰，
       方便用户快速查找感兴趣的相关作品。
-      `,
+    `,
   };
+
   Object.assign(result, {
     ...withPageRange(result, { prelink }),
   });
-  const { t, isCN } = res.locals;
+
   if (isCN) {
     result.docs = result.docs.map((video) => {
       const isHanime = video.site == "hanime";
       if (isHanime) return video;
+
       return {
         ...video,
         title: t(video.title),
@@ -197,6 +231,7 @@ exports.tag = asyncHandler(async (req, res) => {
         desc: t(video.desc),
       };
     });
+
     res.locals.meta = {
       ...res.locals.meta,
       title: t(res.locals.meta.title),
@@ -206,10 +241,24 @@ exports.tag = asyncHandler(async (req, res) => {
       descPage: t(res.locals.meta.descPage),
     };
   }
-  if (req.query.ajax) {
-    return res.send(result);
+
+  if (isAjax) {
+    pageCache.setMemory(cacheKey, result);
+    res.setHeader("X-Page-Cache", "MISS");
+    return res.json(result);
   }
-  return res.render("boot", result);
+
+  return res.render("boot", result, (err, html) => {
+    if (err) throw err;
+
+    pageCache.setMemory(cacheKey, html);
+    const htmlPath = pageCache.makeTagHtmlPath({ lang, type, name, page, site });
+    pageCache.writeHtmlLazy(htmlPath, html);
+
+    res.setHeader("X-Page-Cache", "MISS");
+    res.setHeader("Cache-Control", "public, max-age=180");
+    return res.send(html);
+  });
 });
 exports.genre = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.params.p || "1", 10));
@@ -567,39 +616,55 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 
 exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
-  // 首页：最新
   const page = Math.max(1, parseInt(req.query.page || "1", 10));
   const limit = 40;
+  const { t, isCN } = res.locals;
+
+  const isAjax = !!req.query.ajax;
+  const lang = isCN ? "cn" : "tw";
+  const cacheKey = ["home", isAjax ? "json" : "html", lang, page].join(":");
+
+  if (!isAjax) {
+    const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
+    const diskHtml = await pageCache.readHtml(htmlPath);
+    if (diskHtml) {
+      res.setHeader("X-Page-Cache", "DISK");
+      res.setHeader("Cache-Control", "public, max-age=180");
+      return res.send(diskHtml);
+    }
+  }
+
+  const memCached = pageCache.getMemory(cacheKey);
+  if (memCached) {
+    res.setHeader("X-Page-Cache", "MEMORY");
+    if (isAjax) return res.json(memCached);
+    return res.send(memCached);
+  }
+
   const query = { site: { $nin: siteArr }, ...queryFirt };
 
   const result = await Jav.paginate(query, {
     page,
     limit,
     sort: { date: -1 },
-    select:
-      "title title_en img url site tag cat date id path vipView  source site",
+    select: "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
-  let userDoc = [];
-  // try {
-  //   userDoc = await getWatchingList({ siteArr, limit: 8 });
-  // } catch (e) {
-  //   console.error("getWatchingList error:", e.message);
-  //   userDoc = [];
-  // }
+
   Object.assign(result, {
     ...withPageRange(result, { prelink: "/?page=pageTpl" }),
     userVideo: {
-      docs: userDoc,
+      docs: [],
       title: "現正熱播中",
     },
   });
-  const { t, isCN } = res.locals;
+
   if (isCN) {
     result.docs = result.docs.map((video) => {
       const isHanime = video.site == "hanime";
       if (isHanime) return video;
+
       return {
         ...video,
         title: t(video.title),
@@ -608,13 +673,27 @@ exports.home = asyncHandler(async (req, res) => {
       };
     });
   }
-  res.locals.meta.canonical = crypto.getSiteUrl(req);
-  if (req.query.ajax) {
-    return res.send(result);
-  }
-  return res.render("index", result);
-});
 
+  res.locals.meta.canonical = crypto.getSiteUrl(req);
+
+  if (isAjax) {
+    pageCache.setMemory(cacheKey, result);
+    res.setHeader("X-Page-Cache", "MISS");
+    return res.json(result);
+  }
+
+  return res.render("index", result, (err, html) => {
+    if (err) throw err;
+
+    pageCache.setMemory(cacheKey, html);
+    const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
+    pageCache.writeHtmlLazy(htmlPath, html);
+
+    res.setHeader("X-Page-Cache", "MISS");
+    res.setHeader("Cache-Control", "public, max-age=180");
+    return res.send(html);
+  });
+});
 
 const ONLINE_EXPIRE = 30 * 60 * 1000;
 const MAX_ONLINE_PER_VIDEO = 20;
