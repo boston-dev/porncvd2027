@@ -618,7 +618,7 @@ exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
 
   const REALTIME_MAX_PAGE = 6;
-  const MAX_SAFE_PAGE = 3000;
+  const MAX_SAFE_PAGE = 2865;
 
   let page = Math.max(1, parseInt(req.query.page || "1", 10));
   page = Math.min(page, MAX_SAFE_PAGE);
@@ -630,22 +630,11 @@ exports.home = asyncHandler(async (req, res) => {
   const lang = isCN ? "cn" : "tw";
   const shouldRealtime = page <= REALTIME_MAX_PAGE;
 
-  const cacheKey = ["home", isAjax ? "json" : "html", lang, page].join(":");
-  console.log(cacheKey)
-  const memCached = pageCache.getMemory(cacheKey);
-  if (memCached && !shouldRealtime) {
-    res.setHeader("X-Page-Cache", "MEMORY");
-    if (isAjax) return res.json(memCached);
-    return res.send(memCached);
-  }
-
   if (!isAjax && !shouldRealtime) {
     const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
     const diskHtml = await pageCache.readHtml(htmlPath);
 
     if (diskHtml) {
-      pageCache.setMemory(cacheKey, diskHtml);
-
       res.setHeader("X-Page-Cache", "DISK");
       res.setHeader("Cache-Control", "public, max-age=180");
       return res.send(diskHtml);
@@ -689,23 +678,19 @@ exports.home = asyncHandler(async (req, res) => {
   res.locals.meta.canonical = crypto.getSiteUrl(req);
 
   if (isAjax) {
-    pageCache.setMemory(cacheKey, result);
-
-    res.setHeader("X-Page-Cache", "MISS");
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
     return res.json(result);
   }
 
   return res.render("index", result, (err, html) => {
     if (err) throw err;
 
-    pageCache.setMemory(cacheKey, html);
-
     if (!shouldRealtime) {
       const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
       pageCache.writeHtmlLazy(htmlPath, html);
     }
 
-    res.setHeader("X-Page-Cache", "MISS");
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
     res.setHeader("Cache-Control", "public, max-age=180");
     return res.send(html);
   });
