@@ -1,12 +1,11 @@
 [
-  { "text": "探花", "href": "/cat/tanhua" },
-  { "text": "自拍", "href": "/cat/zipai" },
-  { "text": "流出", "href": "/cat/liuchu" },
+  
   { "text": "偷拍", "href": "/cat/toupai" },
   { "text": "台灣", "href": "/cat/taiwan" },
+  { "text": "日本", "href": "/cat/日本" },
+  { "text": "韓國", "href": "/cat/韓國" },
   { "text": "VIP熱門", "href": "/cat/VIPremen" },
   { "text": "國產", "href": "/cat/guochan" },
-  { "text": "日韓", "href": "/cat/rihan" },
   {
     "text": "動漫",
     "href": "/genre",
@@ -21,5 +20,7 @@
     "text": "黑料吃瓜",
     "href": "https://91cgc.com/",
     "target": "_blank"
-  }
+  },
+   { "text": "日韓", "href": "/cat/rihan" }
 ]
+
