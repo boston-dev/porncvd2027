@@ -234,7 +234,7 @@ async function buildHome() {
   const maxPage = await getHomeMaxPage();
 
   console.log(`[home] maxPage=${maxPage}`);
-
+  return
   const jobs = [];
 
   for (const lang of CACHE_LANGS) {
@@ -428,7 +428,7 @@ async function buildTagPage(name, page, lang, type = "tag") {
 
 async function buildTag() {
   const tags = (await getTopTags()).map(normalizeTagName).filter(Boolean);
-
+  return
   console.log(`[tag] total=${tags.length}`);
 
   for (const name of tags) {
@@ -470,7 +470,7 @@ async function main() {
   });
 
   await buildHome();
- // await buildTag();
+  //await buildTag();
 
   await mongoose.disconnect();
 
