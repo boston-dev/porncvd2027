@@ -1,7 +1,15 @@
 // scripts/warm-page-cache.js
 "use strict";
 
-require("dotenv").config();
+const dotenv= require("dotenv"); 
+
+// 根据环境自动加载
+dotenv.config({
+  path: `.env.${process.env.NODE_ENV || 'development'}`
+})
+
+// 再加载通用
+dotenv.config()
 
 const mongoose = require("mongoose");
 const path = require("path");
@@ -43,7 +51,7 @@ const SITE_URL = (process.env.SITE_URL || "http://127.0.0.1:4350").replace(
 );
 
 const queryFirt = { disable: { $ne: 1 } };
-
+const queryHome= { site: { $nin: process.env.siteArr }, ...queryFirt };
 const SELECT =
   "title title_en img url site tag cat date id path vipView source site";
 
@@ -178,9 +186,9 @@ async function runPool(items, worker, concurrency = CONCURRENCY) {
 }
 
 async function getHomeMaxPage() {
-  const total = await Jav.countDocuments({ ...queryFirt });
+  const total = await Jav.countDocuments(queryHome);
   const dbMaxPage = Math.max(1, Math.ceil(total / LIMIT));
-
+  console.log(queryHome,total,dbMaxPage,LIMIT)
   return HOME_MAX_PAGE_LIMIT
     ? Math.min(HOME_MAX_PAGE_LIMIT, dbMaxPage)
     : dbMaxPage;
