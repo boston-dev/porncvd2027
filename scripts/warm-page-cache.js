@@ -188,7 +188,6 @@ async function runPool(items, worker, concurrency = CONCURRENCY) {
 async function getHomeMaxPage() {
   const total = await Jav.countDocuments(queryHome);
   const dbMaxPage = Math.max(1, Math.ceil(total / LIMIT));
-  console.log(queryHome,total,dbMaxPage,LIMIT)
   return HOME_MAX_PAGE_LIMIT
     ? Math.min(HOME_MAX_PAGE_LIMIT, dbMaxPage)
     : dbMaxPage;
@@ -242,7 +241,6 @@ async function buildHome() {
   const maxPage = await getHomeMaxPage();
 
   console.log(`[home] maxPage=${maxPage}`);
-  return
   const jobs = [];
 
   for (const lang of CACHE_LANGS) {
@@ -436,9 +434,9 @@ async function buildTagPage(name, page, lang, type = "tag") {
 
 async function buildTag() {
   const tags = (await getTopTags()).map(normalizeTagName).filter(Boolean);
-  return
+  console.log(tags)
   console.log(`[tag] total=${tags.length}`);
-
+    return
   for (const name of tags) {
     const maxPage = await getTagMaxPage(name);
 
@@ -477,8 +475,8 @@ async function main() {
     serverSelectionTimeoutMS: 8000,
   });
 
-  await buildHome();
-  //await buildTag();
+  //await buildHome();
+  await buildTag();
 
   await mongoose.disconnect();
 

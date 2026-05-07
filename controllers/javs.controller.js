@@ -119,13 +119,22 @@ function buildPrelinkByUrl(req, pageTpl = "pageTpl") {
 }
 exports.tag = asyncHandler(async (req, res) => {
   const site = decodeURIComponent((req.query.site || "").trim());
+
   const rawName = decodeURIComponent((req.params.name || "").trim());
+
   let name = rawName.toLowerCase();
 
   const findWord = tagNav.find((v) => v.p == name);
+
   if (findWord) name = findWord.text;
 
-  const page = Math.max(1, parseInt(req.params.p || "1", 10));
+  const REALTIME_MAX_PAGE = 6;
+  const MAX_SAFE_PAGE = 1000;
+
+  let page = Math.max(1, parseInt(req.params.p || "1", 10));
+
+  page = Math.min(page, MAX_SAFE_PAGE);
+
   const limit = 40;
 
   if (!name) {
@@ -137,33 +146,42 @@ exports.tag = asyncHandler(async (req, res) => {
   }
 
   const { t, isCN } = res.locals;
-  const isAjax = !!req.query.ajax;
-  const lang = isCN ? "cn" : "tw";
-  const type = req.path.includes("/cat/") ? "cat" : "tag";
-  const cacheKey = [type, isAjax ? "json" : "html", lang, site || "all", name, page].join(":");
 
-  if (!isAjax) {
-    const htmlPath = pageCache.makeTagHtmlPath({ lang, type, name, page, site });
+  const isAjax = !!req.query.ajax;
+
+  const lang = isCN ? "cn" : "tw";
+
+  const type = req.path.includes("/cat/") ? "cat" : "tag";
+
+  const shouldRealtime = page <= REALTIME_MAX_PAGE;
+
+  if (!isAjax && !shouldRealtime) {
+    const htmlPath = pageCache.makeTagHtmlPath({
+      lang,
+      type,
+      name,
+      page,
+      site,
+    });
+
     const diskHtml = await pageCache.readHtml(htmlPath);
+
     if (diskHtml) {
       res.setHeader("X-Page-Cache", "DISK");
       res.setHeader("Cache-Control", "public, max-age=180");
+
       return res.send(diskHtml);
     }
-  }
-
-  const memCached = pageCache.getMemory(cacheKey);
-  if (memCached) {
-    res.setHeader("X-Page-Cache", "MEMORY");
-    if (isAjax) return res.json(memCached);
-    return res.send(memCached);
   }
 
   let keywords = Array.isArray(name) ? name : [name];
 
   if (name.includes("台灣")) keywords.push("台灣");
+
   if (name.includes("twzp")) keywords.push("TWZP");
-  if (name.includes("custom udon")) keywords.push("Custom Udon");
+
+  if (name.includes("custom udon"))
+    keywords.push("Custom Udon");
 
   keywords = [...new Set(keywords)];
 
@@ -171,26 +189,39 @@ exports.tag = asyncHandler(async (req, res) => {
     .filter(Boolean)
     .map((k) => new RegExp(escapeRegExp(k.trim()), "i"));
 
-  let query = optRegexp.length ? { tag: { $in: optRegexp } } : {};
+  let query = optRegexp.length
+    ? { tag: { $in: optRegexp } }
+    : {};
+
   let prelink = buildPrelinkByUrl(req);
 
   Object.assign(query, queryFirt);
 
   if (site) {
     res.locals.curSite = site;
+
     Object.assign(query, { site });
-    prelink.includes("?") ? (prelink += `&site=${site}`) : (prelink += `?site=${site}`);
+
+    prelink.includes("?")
+      ? (prelink += `&site=${site}`)
+      : (prelink += `?site=${site}`);
   }
 
   if (name == "porn5f") {
-    query = { site: "5f", ...queryFirt };
+    query = {
+      site: "5f",
+      ...queryFirt,
+    };
   }
 
   const result = await Jav.paginate(query, {
     page,
     limit,
-    sort: { date: -1 },
-    select: "title title_en img url site tag cat date id path vipView source site",
+    sort: {
+      date: -1,
+    },
+    select:
+      "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
@@ -208,20 +239,26 @@ exports.tag = asyncHandler(async (req, res) => {
 
   res.locals.meta = {
     ...res.locals.meta,
+
     titlePage: `${name}视频合集`,
+
     descPage: `
-      这里整理了与「${name}」相关的精选视频资源，内容更新及时，分类清晰，
+      这里整理了与「${name}」相关的精选视频资源，
+      内容更新及时，分类清晰，
       方便用户快速查找感兴趣的相关作品。
     `,
   };
 
   Object.assign(result, {
-    ...withPageRange(result, { prelink }),
+    ...withPageRange(result, {
+      prelink,
+    }),
   });
 
   if (isCN) {
     result.docs = result.docs.map((video) => {
       const isHanime = video.site == "hanime";
+
       if (isHanime) return video;
 
       return {
@@ -243,20 +280,39 @@ exports.tag = asyncHandler(async (req, res) => {
   }
 
   if (isAjax) {
-    pageCache.setMemory(cacheKey, result);
-    res.setHeader("X-Page-Cache", "MISS");
+    res.setHeader(
+      "X-Page-Cache",
+      shouldRealtime ? "REALTIME" : "MISS"
+    );
+
     return res.json(result);
   }
 
   return res.render("boot", result, (err, html) => {
     if (err) throw err;
 
-    pageCache.setMemory(cacheKey, html);
-    const htmlPath = pageCache.makeTagHtmlPath({ lang, type, name, page, site });
-    pageCache.writeHtmlLazy(htmlPath, html);
+    if (!shouldRealtime) {
+      const htmlPath = pageCache.makeTagHtmlPath({
+        lang,
+        type,
+        name,
+        page,
+        site,
+      });
 
-    res.setHeader("X-Page-Cache", "MISS");
-    res.setHeader("Cache-Control", "public, max-age=180");
+      pageCache.writeHtmlLazy(htmlPath, html);
+    }
+
+    res.setHeader(
+      "X-Page-Cache",
+      shouldRealtime ? "REALTIME" : "MISS"
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=180"
+    );
+
     return res.send(html);
   });
 });
