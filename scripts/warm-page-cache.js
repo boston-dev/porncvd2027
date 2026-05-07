@@ -19,7 +19,7 @@ const pageCache = require("../utils/pageCache");
 const toCN = OpenCC.Converter({ from: "twp", to: "cn" });
 
 const LIMIT = Number(process.env.PAGE_LIMIT || 40);
-const CONCURRENCY = Number(process.env.CONCURRENCY || 40);
+const CONCURRENCY = Number(process.env.CONCURRENCY || 80);
 const TAG_LIMIT = Number(process.env.TAG_LIMIT || 1000);
 const TAG_MIN_COUNT = Number(process.env.TAG_MIN_COUNT || 500);
 
@@ -470,7 +470,7 @@ async function main() {
   });
 
   await buildHome();
-  await buildTag();
+ // await buildTag();
 
   await mongoose.disconnect();
 

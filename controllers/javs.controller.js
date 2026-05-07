@@ -616,29 +616,40 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 
 exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
-  const page = Math.max(1, parseInt(req.query.page || "1", 10));
+
+  const REALTIME_MAX_PAGE = 6;
+  const MAX_SAFE_PAGE = 3000;
+
+  let page = Math.max(1, parseInt(req.query.page || "1", 10));
+  page = Math.min(page, MAX_SAFE_PAGE);
+
   const limit = 40;
   const { t, isCN } = res.locals;
 
   const isAjax = !!req.query.ajax;
   const lang = isCN ? "cn" : "tw";
-  const cacheKey = ["home", isAjax ? "json" : "html", lang, page].join(":");
+  const shouldRealtime = page <= REALTIME_MAX_PAGE;
 
-  if (!isAjax) {
+  const cacheKey = ["home", isAjax ? "json" : "html", lang, page].join(":");
+  console.log(cacheKey)
+  const memCached = pageCache.getMemory(cacheKey);
+  if (memCached && !shouldRealtime) {
+    res.setHeader("X-Page-Cache", "MEMORY");
+    if (isAjax) return res.json(memCached);
+    return res.send(memCached);
+  }
+
+  if (!isAjax && !shouldRealtime) {
     const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
     const diskHtml = await pageCache.readHtml(htmlPath);
+
     if (diskHtml) {
+      pageCache.setMemory(cacheKey, diskHtml);
+
       res.setHeader("X-Page-Cache", "DISK");
       res.setHeader("Cache-Control", "public, max-age=180");
       return res.send(diskHtml);
     }
-  }
-
-  const memCached = pageCache.getMemory(cacheKey);
-  if (memCached) {
-    res.setHeader("X-Page-Cache", "MEMORY");
-    if (isAjax) return res.json(memCached);
-    return res.send(memCached);
   }
 
   const query = { site: { $nin: siteArr }, ...queryFirt };
@@ -647,7 +658,8 @@ exports.home = asyncHandler(async (req, res) => {
     page,
     limit,
     sort: { date: -1 },
-    select: "title title_en img url site tag cat date id path vipView source site",
+    select:
+      "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
@@ -678,6 +690,7 @@ exports.home = asyncHandler(async (req, res) => {
 
   if (isAjax) {
     pageCache.setMemory(cacheKey, result);
+
     res.setHeader("X-Page-Cache", "MISS");
     return res.json(result);
   }
@@ -686,8 +699,11 @@ exports.home = asyncHandler(async (req, res) => {
     if (err) throw err;
 
     pageCache.setMemory(cacheKey, html);
-    const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
-    pageCache.writeHtmlLazy(htmlPath, html);
+
+    if (!shouldRealtime) {
+      const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
+      pageCache.writeHtmlLazy(htmlPath, html);
+    }
 
     res.setHeader("X-Page-Cache", "MISS");
     res.setHeader("Cache-Control", "public, max-age=180");
