@@ -151,8 +151,8 @@ exports.tag = asyncHandler(async (req, res) => {
 
   const lang = isCN ? "cn" : "tw";
 
-  const type = req.path.includes("/cat/") ? "cat" : "tag";
-
+  //const type = req.path.includes("/cat/") ? "cat" : "tag";
+  const type = "tag";
   const shouldRealtime = page <= REALTIME_MAX_PAGE;
 
   if (!isAjax && !shouldRealtime) {

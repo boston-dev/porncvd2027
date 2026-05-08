@@ -257,44 +257,77 @@ async function getTopTags() {
     {
       $match: {
         disable: { $ne: 1 },
-        tag: { $exists: true, $ne: null },
-      },
-    },
-    {
-      $project: {
-        tags: {
-          $cond: [{ $isArray: "$tag" }, "$tag", ["$tag"]],
+        tag: {
+          $exists: true,
+          $ne: null,
         },
       },
     },
-    { $unwind: "$tags" },
+
     {
-      $match: {
-        tags: { $type: "string", $ne: "" },
+      $project: {
+        site: 1,
+
+        tags: {
+          $cond: [
+            { $isArray: "$tag" },
+            "$tag",
+            ["$tag"],
+          ],
+        },
       },
     },
+
+    {
+      $unwind: "$tags",
+    },
+
+    {
+      $match: {
+        tags: {
+          $type: "string",
+          $ne: "",
+        },
+      },
+    },
+
     {
       $group: {
-        _id: "$tags",
-        count: { $sum: 1 },
+        _id: {
+          tag: "$tags",
+          site: "$site",
+        },
+
+        count: {
+          $sum: 1,
+        },
       },
     },
+
     {
       $match: {
-        count: { $gte: TAG_MIN_COUNT },
+        count: {
+          $gte: TAG_MIN_COUNT,
+        },
       },
     },
+
     {
       $sort: {
         count: -1,
       },
     },
+
     {
       $limit: TAG_LIMIT,
     },
   ]).allowDiskUse(true);
 
-  return rows.map((v) => v._id);
+  return rows.map((v) => ({
+    name: v._id.tag,
+    site: v._id.site || "",
+    count: v.count,
+  }));
 }
 
 function normalizeTagName(rawName) {
