@@ -5,12 +5,13 @@
   "description": "PornCVD stable production backend (Express + Mongoose)",
   "main": "app.js",
   "scripts": {
-     "start": "cross-env NODE_ENV=production node app.js",
+    "start": "cross-env NODE_ENV=production node app.js",
     "dev": "cross-env NODE_ENV=development nodemon app.js"
   },
   "dependencies": {
     "compression": "^1.7.4",
     "cross-env": "^10.1.0",
+    "dotenv": "^17.4.2",
     "ejs": "~2.6.1",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.0",
