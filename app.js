@@ -79,7 +79,7 @@ app.use(async (req, res, next) => {
   res.locals.isCN = req.path.startsWith("/zh-CN");
   res.locals.basePath = res.locals.isCN ? "/zh-CN" : "";
   res.locals.isMobile = isMobile(req);
-  res.locals.siteArr = process.env.siteArr;
+  res.locals.siteArr = JSON.parse(process.env.siteArr || "[]");
   res.locals.gNav = gNav;
   res.locals.isProd = process.env.NODE_ENV === "production";
   res.locals.t = (s) => {
