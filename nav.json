@@ -1,15 +1,18 @@
 [
-  { "text": "偷拍", "href": "/cat/toupai","type":"nav" },
   { "text": "台灣", "href": "/cat/taiwan","type":"nav" },
+  { "text": "探花", "href": "/cat/tanhua" ,"type":"nav"},
+  { "text": "自拍", "href": "/cat/zipai" ,"type":"nav"},
+  { "text": "流出", "href": "/cat/liuchu" ,"type":"nav"},
+  { "text": "偷拍", "href": "/cat/toupai","type":"nav" },
   { "text": "日本", "href": "/cat/日本","type":"nav" },
   { "text": "韓國", "href": "/cat/韓國","type":"nav" },
   { "text": "VIP熱門", "href": "/cat/VIPremen","type":"nav" },
-  { "text": "國產", "href": "/cat/guochan" ,"type":"nav"},
   {
     "text": "動漫",
     "href": "/genre",
     "target": "_blank"
   },
+  { "text": "國產", "href": "/cat/guochan" ,"type":"nav"},
   { "text": "傳媒", "href": "/cat/chuanmei","type":"nav" },
   {
     "text": "當前最熱",
