@@ -51,7 +51,7 @@ const slectConfig = {
   type: 1,
 };
 const queryFirt = { disable: { $ne: 1 } };
-
+const REALTIME_MAX_PAGE =12;
 exports.search = asyncHandler(async (req, res) => {
   let qRaw = (req.query.search_query || "").trim();
   const page = Math.max(1, parseInt(req.query.page || "1", 10));
@@ -128,7 +128,7 @@ exports.tag = asyncHandler(async (req, res) => {
 
   if (findWord) name = findWord.text;
 
-  const REALTIME_MAX_PAGE = 6;
+
   const MAX_SAFE_PAGE = 1000;
 
   let page = Math.max(1, parseInt(req.params.p || "1", 10));
@@ -678,7 +678,7 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
   res.locals.meta.canonical = crypto.getSiteUrl(req);
-  const REALTIME_MAX_PAGE = 6;
+  
   const MAX_SAFE_PAGE = 2865;
 
   let page = Math.max(1, parseInt(req.query.page || "1", 10));
