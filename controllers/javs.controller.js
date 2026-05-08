@@ -57,7 +57,7 @@ exports.search = [
   asyncHandler(async (req, res) => {
     let qRaw = String(req.query.search_query || "").trim();
 
-    const MAX_SEARCH_PAGE = 3;
+    const MAX_SEARCH_PAGE = 2;
     let page = Math.max(1, parseInt(req.query.page || "1", 10));
 
     if (page > MAX_SEARCH_PAGE) {
