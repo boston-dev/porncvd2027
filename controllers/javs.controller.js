@@ -8,7 +8,7 @@ const {
   sanitizeUnicode,
   saveRankJson,
 } = require("../utils/buildMeta");
-const { detailLimiter, withPageRange } = require("../middleware/rateLimit");
+const { detailLimiter, withPageRange,searchLimiter } = require("../middleware/rateLimit");
 const renderFallback = require("../utils/renderFallback");
 const pageCache = require("../utils/pageCache");
 const OpenCC = require("opencc-js");
@@ -52,56 +52,86 @@ const slectConfig = {
 };
 const queryFirt = { disable: { $ne: 1 } };
 const REALTIME_MAX_PAGE =12;
-exports.search = asyncHandler(async (req, res) => {
-  let qRaw = (req.query.search_query || "").trim();
-  const page = Math.max(1, parseInt(req.query.page || "1", 10));
-  const limit = 40;
+exports.search = [
+  searchLimiter,
+  asyncHandler(async (req, res) => {
+    let qRaw = String(req.query.search_query || "").trim();
 
-  // 防刷：太长直接拒绝（避免 regex 被滥用）
-  if (qRaw.length > 60) return res.status(400).send("Bad Request");
-  if (res.locals.isCN) {
-    qRaw = toTwp(qRaw);
-  }
-  const query = { ...queryFirt };
-  if (qRaw) {
+    const MAX_SEARCH_PAGE = 3;
+    let page = Math.max(1, parseInt(req.query.page || "1", 10));
+
+    if (page > MAX_SEARCH_PAGE) {
+      return res.redirect(301, `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=2`);
+    }
+
+    const limit = 40;
+
+    if (qRaw.length > 40) {
+      return res.status(400).send("Bad Request");
+    }
+
+    if (!qRaw) {
+      return res.redirect("/");
+    }
+
+    if (res.locals.isCN) {
+      qRaw = toTwp(qRaw);
+    }
+
+    const query = { ...queryFirt };
+
     const reg = new RegExp(escReg(qRaw), "i");
     query.$or = [{ title: reg }, { desc: reg }];
-  }
-  const result = await Jav.paginate(query, {
-    page,
-    limit,
-    sort: { date: -1 },
-    select:
-      "title title_en img url site tag cat date id path vipView  source  site",
-    lean: true,
-    leanWithId: false,
-  });
 
-  result.search_query = qRaw;
-  Object.assign(result, {
-    ...withPageRange(result, {
-      prelink: `/search/javs?search_query=${qRaw}&page=pageTpl`,
-    }),
-  });
-  const { t, isCN } = res.locals;
-  if (isCN) {
-    result.docs = result.docs.map((video) => {
-      const isHanime = video.site == "hanime";
-      if (isHanime) return video;
-      return {
-        ...video,
-        title: t(video.title),
-        keywords: t(video.title),
-        desc: t(video.desc),
-      };
+    const result = await Jav.paginate(query, {
+      page,
+      limit,
+      sort: { date: -1 },
+      select:
+        "title title_en img url site tag cat date id path vipView source site",
+      lean: true,
+      leanWithId: false,
     });
-  }
-  if (req.query.ajax) {
-    return res.send(result);
-  }
-  return res.render("boot", result);
-});
 
+    result.search_query = qRaw;
+
+    // 永远最多展示 2 页
+    result.totalPages = Math.min(Number(result.totalPages || 1), MAX_SEARCH_PAGE);
+    result.hasNextPage = page < result.totalPages;
+    result.hasPrevPage = page > 1;
+    result.nextPage = result.hasNextPage ? page + 1 : null;
+    result.prevPage = result.hasPrevPage ? page - 1 : null;
+
+    Object.assign(result, {
+      ...withPageRange(result, {
+        prelink: `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=pageTpl`,
+      }),
+    });
+
+    const { t, isCN } = res.locals;
+
+    if (isCN) {
+      result.docs = result.docs.map((video) => {
+        if (video.site === "hanime") return video;
+
+        return {
+          ...video,
+          title: t(video.title),
+          keywords: t(video.title),
+          desc: t(video.desc),
+        };
+      });
+    }
+
+    res.setHeader("Cache-Control", "public, max-age=60");
+
+    if (req.query.ajax) {
+      return res.json(result);
+    }
+
+    return res.render("boot", result);
+  }),
+];
 function escapeRegExp(str = "") {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -725,7 +755,7 @@ exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
   res.locals.meta.canonical = crypto.getSiteUrl(req);
   
-  const MAX_SAFE_PAGE = 2865;
+  const MAX_SAFE_PAGE = 2869;
 
   let page = Math.max(1, parseInt(req.query.page || "1", 10));
   page = Math.min(page, MAX_SAFE_PAGE);

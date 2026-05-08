@@ -16,7 +16,12 @@ const detailLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30, // 每 IP 每分钟最多 30 次搜索
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 /**
  * 生成分页 range
  * @param {Object} data - 必须包含 page, totalPages
@@ -79,4 +84,4 @@ function withPageRange(data, option = {}, size = 3) {
 // const newData = withPageRange({ page: 5, totalPages: 20 }, { prelink: '/list/pageTpl.html' });
 // console.log(newData.range);
 
-module.exports = { generalLimiter, detailLimiter,withPageRange };
+module.exports = { generalLimiter, detailLimiter,withPageRange ,searchLimiter};
