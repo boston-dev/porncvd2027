@@ -49,9 +49,11 @@ const SITE_URL = (process.env.SITE_URL || "http://127.0.0.1:4350").replace(
   /\/+$/,
   ""
 );
-
+const siteArr = JSON.parse(process.env.siteArr || "[]");
 const queryFirt = { disable: { $ne: 1 } };
-const queryHome= { site: { $nin: process.env.siteArr }, ...queryFirt };
+const queryHome = siteArr.length
+  ? { site: { $nin: siteArr }, ...queryFirt }
+  : { ...queryFirt };
 const SELECT =
   "title title_en img url site tag cat date id path vipView source site";
 
@@ -79,7 +81,7 @@ function makeBaseLocals(lang) {
     isCN,
     basePath: isCN ? "/zh-CN" : "",
     isMobile: false,
-    siteArr: ["hanime"],
+    siteArr,
     gNav,
     genreNav,
     isProd: process.env.NODE_ENV === "production",
@@ -115,7 +117,7 @@ function makeBaseLocals(lang) {
   };
 }
 
-function makeMockReq({ locals, type, name, page }) {
+function makeMockReq({ locals, type, name, page, site: siteFilter = "" }) {
   const site = new URL(SITE_URL);
   const proto = site.protocol.replace(":", "") || "https";
 
@@ -123,15 +125,18 @@ function makeMockReq({ locals, type, name, page }) {
     name
   )}/${page}`.replace(/\/{2,}/g, "/");
 
+  const queryString = siteFilter ? `?site=${encodeURIComponent(siteFilter)}` : "";
+  const fullUrl = `${urlPath}${queryString}`;
+
   return {
     protocol: proto,
     hostname: site.hostname,
     host: site.host,
     path: urlPath,
-    url: urlPath,
-    originalUrl: urlPath,
+    url: fullUrl,
+    originalUrl: fullUrl,
     baseUrl: locals.basePath || "",
-    query: {},
+    query: siteFilter ? { site: siteFilter } : {},
     params: {
       name,
       p: String(page),
@@ -177,7 +182,9 @@ async function runPool(items, worker, concurrency = CONCURRENCY) {
 
   const workers = Array.from({ length: Math.max(1, concurrency) }, async () => {
     while (index < items.length) {
-      const current = items[index++];
+      const currentIndex = index++;
+      if (currentIndex >= items.length) break;
+      const current = items[currentIndex];
       await worker(current);
     }
   });
@@ -195,7 +202,9 @@ async function getHomeMaxPage() {
 
 async function buildHomePage(page, lang) {
   const locals = makeBaseLocals(lang);
-  const query = { site: { $nin: locals.siteArr }, ...queryFirt };
+  const query = siteArr.length
+    ? { site: { $nin: siteArr }, ...queryFirt }
+    : { ...queryFirt };
 
   const result = await Jav.paginate(query, {
     page,
@@ -322,9 +331,9 @@ async function getTopTags() {
       $limit: TAG_LIMIT,
     },
   ]).allowDiskUse(true);
-
+  
   return rows.map((v) => ({
-    name: v._id.tag,
+    text: v._id.tag,
     site: v._id.site || "",
     count: v.count,
   }));
@@ -370,8 +379,8 @@ function buildTagQuery(name, site = "") {
   return query;
 }
 
-async function getTagMaxPage(name) {
-  const total = await Jav.countDocuments(buildTagQuery(name));
+async function getTagMaxPage(name, site = "") {
+  const total = await Jav.countDocuments(buildTagQuery(name, site));
   const dbMaxPage = Math.max(1, Math.ceil(total / LIMIT));
 
   return TAG_MAX_PAGE_LIMIT
@@ -379,9 +388,9 @@ async function getTagMaxPage(name) {
     : dbMaxPage;
 }
 
-async function buildTagPage(name, page, lang, type = "tag") {
+async function buildTagPage(name, page, lang, type = "tag", site = "") {
   const locals = makeBaseLocals(lang);
-  const query = buildTagQuery(name);
+  const query = buildTagQuery(name, site);
 
   const result = await Jav.paginate(query, {
     page,
@@ -395,12 +404,15 @@ async function buildTagPage(name, page, lang, type = "tag") {
   if (!result.docs.length) return;
 
   result.name = name;
+  result.site = site;
+  locals.curSite = site || "";
 
   const mockReq = makeMockReq({
     locals,
     type,
     name,
     page,
+    site,
   });
 
   locals.meta = buildListMeta({
@@ -423,7 +435,9 @@ async function buildTagPage(name, page, lang, type = "tag") {
 
   Object.assign(result, {
     ...withPageRange(result, {
-      prelink: `/${type}/${encodeURIComponent(name)}/pageTpl`,
+      prelink: site
+        ? `/${type}/${encodeURIComponent(name)}/pageTpl?site=${encodeURIComponent(site)}`
+        : `/${type}/${encodeURIComponent(name)}/pageTpl`,
     }),
   });
 
@@ -456,35 +470,87 @@ async function buildTagPage(name, page, lang, type = "tag") {
     type,
     name,
     page,
-    site: "",
+    site,
   });
 
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, html, "utf8");
 
-  console.log(`[${type}] ${lang} ${name} page=${page}`);
+  console.log(`[${type}] ${lang} ${name}${site ? `?site=${site}` : ""} page=${page}`);
+}
+
+function getNameFromNavItem(item) {
+  const rawHref = String(item.href || "").split("?")[0].replace(/\/+$/, "");
+  const fromHref = rawHref.split("/").filter(Boolean).pop();
+  return normalizeTagName(item.text || item.name || fromHref || "");
+}
+
+function normalizeSiteName(site = "") {
+  return String(site || "").trim();
+}
+
+function shouldUseSiteQuery(site = "") {
+  const s = normalizeSiteName(site);
+  return !!s && siteArr.includes(s);
+}
+
+async function getBuildTagItems() {
+  const map = new Map();
+
+  function addItem(name, site = "", source = "db") {
+    const normalizedName = normalizeTagName(name);
+    if (!normalizedName) return;
+
+    const normalizedSite = shouldUseSiteQuery(site) ? normalizeSiteName(site) : "";
+    const key = `${normalizedName}@@${normalizedSite}`;
+
+    if (!map.has(key)) {
+      map.set(key, {
+        name: normalizedName,
+        site: normalizedSite,
+        source,
+      });
+    }
+  }
+
+  // 1. 数据库热门 tag。
+  // 如果该 tag 的 site 在 siteArr 里面，例如 hanime，则生成 /tag/name/page?site=hanime 的缓存。
+  const dbTags = await getTopTags();
+
+  for (const row of dbTags) {
+    addItem(row.text, row.site, "db");
+  }
+
+  // 2. gNav 中 type 存在的导航项也合并进 tag 构建列表。
+  // type 通常代表特殊站点来源，例如 hanime。只有 type 在 siteArr 里，才带 ?site=xxx。
+  for (const item of gNav.filter((v) => v && v.type)) {
+    const name = getNameFromNavItem(item);
+    const site = item.type;
+    addItem(name, site, "gNav");
+  }
+
+  return [...map.values()];
 }
 
 async function buildTag() {
-  const tags = (await getTopTags()).map(normalizeTagName).filter(Boolean);
-  console.log(tags)
-  console.log(`[tag] total=${tags.length}`);
-    return
-  for (const name of tags) {
-    const maxPage = await getTagMaxPage(name);
+  const tags = await getBuildTagItems();
 
-    console.log(`[tag] ${name} maxPage=${maxPage}`);
+  for (const item of tags) {
+    const { name, site } = item;
+    const maxPage = await getTagMaxPage(name, site);
+
+    console.log(`[tag] ${name}${site ? `?site=${site}` : ""} maxPage=${maxPage}`);
 
     const jobs = [];
 
     for (const lang of CACHE_LANGS) {
       for (let page = 1; page <= maxPage; page++) {
-        jobs.push({ name, page, lang });
+        jobs.push({ name, site, page, lang });
       }
     }
 
-    await runPool(jobs, ({ name, page, lang }) =>
-      buildTagPage(name, page, lang, "tag")
+    await runPool(jobs, ({ name, site, page, lang }) =>
+      buildTagPage(name, page, lang, "tag", site)
     );
   }
 }

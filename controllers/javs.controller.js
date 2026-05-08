@@ -164,9 +164,14 @@ exports.tag = asyncHandler(async (req, res) => {
       site,
     });
 
-    const diskHtml = await pageCache.readHtml(htmlPath);
+    let diskHtml = await pageCache.readHtml(htmlPath);
 
     if (diskHtml) {
+      const siteFix=crypto.getSiteUrl(req);
+        diskHtml = diskHtml.replaceAll(
+        "https://porncvd.com",
+        siteFix
+      );
       res.setHeader("X-Page-Cache", "DISK");
       res.setHeader("Cache-Control", "public, max-age=180");
 
@@ -672,7 +677,7 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 
 exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
-
+  res.locals.meta.canonical = crypto.getSiteUrl(req);
   const REALTIME_MAX_PAGE = 6;
   const MAX_SAFE_PAGE = 2865;
 
@@ -688,9 +693,13 @@ exports.home = asyncHandler(async (req, res) => {
 
   if (!isAjax && !shouldRealtime) {
     const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
-    const diskHtml = await pageCache.readHtml(htmlPath);
+    let diskHtml = await pageCache.readHtml(htmlPath);
 
     if (diskHtml) {
+        diskHtml = diskHtml.replaceAll(
+        "https://porncvd.com",
+        res.locals.meta.canonical
+      );
       res.setHeader("X-Page-Cache", "DISK");
       res.setHeader("Cache-Control", "public, max-age=180");
       return res.send(diskHtml);
@@ -730,9 +739,6 @@ exports.home = asyncHandler(async (req, res) => {
       };
     });
   }
-
-  res.locals.meta.canonical = crypto.getSiteUrl(req);
-
   if (isAjax) {
     res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
     return res.json(result);
