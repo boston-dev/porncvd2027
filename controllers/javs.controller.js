@@ -149,7 +149,7 @@ exports.tag = asyncHandler(async (req, res) => {
 
   const isAjax = !!req.query.ajax;
 
-  const lang = isCN ? "cn" : "tw";
+const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
 
   //const type = req.path.includes("/cat/") ? "cat" : "tag";
   const type = "tag";
@@ -322,17 +322,48 @@ exports.tag = asyncHandler(async (req, res) => {
   });
 });
 exports.genre = asyncHandler(async (req, res) => {
-  const page = Math.max(1, parseInt(req.params.p || "1", 10));
+  const MAX_SAFE_PAGE = 2865;
+
+  let page = Math.max(1, parseInt(req.params.p || "1", 10));
+  page = Math.min(page, MAX_SAFE_PAGE);
+
   const limit = 40;
+  const isAjax = !!req.query.ajax;
+  const shouldRealtime = page <= REALTIME_MAX_PAGE;
+
   res.locals.curSite = "hanime";
-  const query = { site: { $eq: "hanime" }, ...queryFirt };
+  res.locals.meta.canonical = crypto.getSiteUrl(req);
+
+  // 非 ajax + 非实时页，优先读磁盘缓存
+  if (!isAjax && !shouldRealtime) {
+    const htmlPath = pageCache.makeGenreHtmlPath({ page });
+    let diskHtml = await pageCache.readHtml(htmlPath);
+
+    if (diskHtml) {
+      diskHtml = diskHtml.replaceAll(
+        "https://porncvd.com",
+        res.locals.meta.canonical
+      );
+
+      res.setHeader("X-Page-Cache", "DISK");
+      res.setHeader("Cache-Control", "public, max-age=180");
+      return res.send(diskHtml);
+    }
+  }
+
+  const query = {
+    site: "hanime",
+    ...queryFirt,
+  };
+
   const prelink = `/genre/pageTpl`;
+
   const result = await Jav.paginate(query, {
     page,
     limit,
     sort: { date: -1 },
     select:
-      "title title_en img url site tag cat date id path vipView  source site",
+      "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
@@ -340,18 +371,33 @@ exports.genre = asyncHandler(async (req, res) => {
   Object.assign(result, {
     ...withPageRange(result, { prelink }),
   });
+
   res.locals.meta = buildListMeta({
     req,
     type: "cat",
     name: "動漫",
     page,
-    totalPages: result.totalPages, // 你 paginate 的返回
+    totalPages: result.totalPages,
     siteName: process.env.SITE_NAME,
   });
-  if (req.query.ajax) {
-    return res.send(result);
+
+  if (isAjax) {
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+    return res.json(result);
   }
-  return res.render("boot", result);
+
+  return res.render("boot", result, (err, html) => {
+    if (err) throw err;
+
+    if (!shouldRealtime) {
+      const htmlPath = pageCache.makeGenreHtmlPath({ page });
+      pageCache.writeHtmlLazy(htmlPath, html);
+    }
+
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+    res.setHeader("Cache-Control", "public, max-age=180");
+    return res.send(html);
+  });
 });
 // 随机取一个“可播放”的视频（你按自己字段改筛选条件）
 async function pickOnePlayableVideo(site) {

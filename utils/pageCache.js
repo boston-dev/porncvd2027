@@ -80,8 +80,11 @@ function writeHtmlLazy(filePath, html) {
 
   pending.set(filePath, task);
 }
-
+function makeGenreHtmlPath({ page }) {
+  return path.join(OUT_DIR, "genre", `${page}.html`);
+}
 module.exports = {
+  makeGenreHtmlPath,
   DEFAULT_TTL,
   OUT_DIR,
   getMemory,
