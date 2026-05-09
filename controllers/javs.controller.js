@@ -144,14 +144,16 @@ function buildPrelinkByUrl(req, pageTpl = "pageTpl") {
     return base.replace(/\/\d+$/, `/${pageTpl}`);
   }
 
-  // 如果末尾不是数字 => 直接追加 /pageTpl
+  // 如果末尾不是数字 => 直接追加 /pageTplp
   return `${base}/${pageTpl}`;
 }
 exports.tag = asyncHandler(async (req, res) => {
   const site = decodeURIComponent((req.query.site || "").trim());
 
   const rawName = decodeURIComponent((req.params.name || "").trim());
-
+  if (!rawName || rawName.length < 2) {
+    return res.status(404).render("NotFound");
+  }
   let name = rawName.toLowerCase();
 
   const findWord = tagNav.find((v) => v.p == name);
