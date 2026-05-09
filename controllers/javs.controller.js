@@ -72,12 +72,12 @@ exports.search = [
 
     // 搜索词过长直接拒绝
     if (qRaw.length > 40) {
-      return res.status(400).send("Bad Request");
+      return res.render("NotFound");
     }
 
     // 空搜索回首页
     if (!qRaw || qRaw.length < 2) {
-      return res.redirect("/");
+      return res.render("NotFound");
     }
 
     const { t, isCN } = res.locals;
@@ -187,7 +187,7 @@ exports.tag = asyncHandler(async (req, res) => {
 
   const rawName = decodeURIComponent((req.params.name || "").trim());
   if (!rawName || rawName.length < 2) {
-    return res.status(404).render("NotFound");
+    return res.render("NotFound");
   }
   let name = rawName.toLowerCase();
 
