@@ -58,60 +58,66 @@ exports.search = [
     let qRaw = String(req.query.search_query || "").trim();
 
     const MAX_SEARCH_PAGE = 2;
-    let page = Math.max(1, parseInt(req.query.page || "1", 10));
-
-    if (page > MAX_SEARCH_PAGE) {
-      return res.redirect(301, `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=2`);
-    }
-
     const limit = 40;
 
+    let page = Math.max(1, parseInt(req.query.page || "1", 10));
+
+    // 搜索页永远最多 2 页，防止 page=999 爆破
+    if (page > MAX_SEARCH_PAGE) {
+      return res.redirect(
+        301,
+        `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=${MAX_SEARCH_PAGE}`
+      );
+    }
+
+    // 搜索词过长直接拒绝
     if (qRaw.length > 40) {
       return res.status(400).send("Bad Request");
     }
 
-    if (!qRaw) {
+    // 空搜索回首页
+    if (!qRaw || qRaw.length < 2) {
       return res.redirect("/");
     }
 
-    if (res.locals.isCN) {
+    const { t, isCN } = res.locals;
+
+    // 简体环境转繁体搜索
+    if (isCN) {
       qRaw = toTwp(qRaw);
     }
 
     const query = { ...queryFirt };
 
     const reg = new RegExp(escReg(qRaw), "i");
-    query.$or = [{ title: reg }, { desc: reg }];
 
-    const result = await Jav.paginate(query, {
-      page,
-      limit,
-      sort: { date: -1 },
-      select:
-        "title title_en img url site tag cat date id path vipView source site",
-      lean: true,
-      leanWithId: false,
-    });
+    query.$or = [
+      { title: reg },
+      { desc: reg },
+    ];
 
-    result.search_query = qRaw;
+    const skip = (page - 1) * limit;
 
-    // 永远最多展示 2 页
-    result.totalPages = Math.min(Number(result.totalPages || 1), MAX_SEARCH_PAGE);
-    result.hasNextPage = page < result.totalPages;
-    result.hasPrevPage = page > 1;
-    result.nextPage = result.hasNextPage ? page + 1 : null;
-    result.prevPage = result.hasPrevPage ? page - 1 : null;
+    // 不用 paginate，避免 countDocuments 压力
+    let docs = await Jav.find(query)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(limit + 1)
+      .select(
+        "title title_en img url site tag cat date id path vipView source desc"
+      )
+      .lean();
 
-    Object.assign(result, {
-      ...withPageRange(result, {
-        prelink: `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=pageTpl`,
-      }),
-    });
+    // limit + 1 判断是否还有下一页
+    const realHasNextPage = docs.length > limit;
 
-    const { t, isCN } = res.locals;
+    if (realHasNextPage) {
+      docs.pop();
+    }
 
+    // 简体环境翻译展示内容
     if (isCN) {
-      result.docs = result.docs.map((video) => {
+      docs = docs.map((video) => {
         if (video.site === "hanime") return video;
 
         return {
@@ -122,6 +128,35 @@ exports.search = [
         };
       });
     }
+
+    // 兼容 mongoose-paginate-v2 的视图字段
+    const result = {
+      docs,
+
+      // 基础分页字段
+      totalDocs: 0,
+      limit,
+      page,
+      totalPages: MAX_SEARCH_PAGE,
+      pagingCounter: skip + 1,
+
+      // 兼容模板常用字段
+      hasPrevPage: page > 1,
+      hasNextPage: page < MAX_SEARCH_PAGE && realHasNextPage,
+      prevPage: page > 1 ? page - 1 : null,
+      nextPage: page < MAX_SEARCH_PAGE && realHasNextPage ? page + 1 : null,
+
+      // 兼容旧模板
+      search_query: qRaw,
+    };
+
+    Object.assign(result, {
+      ...withPageRange(result, {
+        prelink: `/search/javs?search_query=${encodeURIComponent(
+          qRaw
+        )}&page=pageTpl`,
+      }),
+    });
 
     res.setHeader("Cache-Control", "public, max-age=60");
 
