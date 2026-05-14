@@ -1,5 +1,19 @@
 <%- include include/boot-head.html%>
-<section class="tag-hero-ultra">
-  <h1 class="tag-hero-ultra__title">最新视频模块</h1>
-</section>
+<div id="hot-list">
+
+</div>
+<script>
+  function loadHotVideos(limit) {
+  $.get("/hot", {
+    index:1,
+    limit: limit
+  }, function (html) {
+    $("#hot-list").html(html);
+    if (window.lazyload) {
+      lazyload.update();
+    }
+  });
+}
+loadHotVideos(4);
+</script>
 <%- include include/boot-list.html%> <%- include include/boot-footer.html%>

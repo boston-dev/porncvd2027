@@ -202,8 +202,36 @@
                     } : undefined
                 }
             })
-           
+          
+            var playStart = 0;
+            var reported=false
+            dp.on('timeupdate', function (utime) {
+              if (reported) return;
+              if(playStart === 0){
+                playStart = Date.now();
+              }
+              var playedSeconds = (Date.now() - playStart) / 1000;
+              if (playedSeconds >= 15) {
+                 var ogImage = $('meta[property="og:image"]').attr('content');
+                if (ogImage) {
+                  var url = new URL(ogImage);
+                  var source = url.origin;
+                  var img = url.pathname;
+                  fetch('/view/online.html', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          id: location.pathname.match(/\/javs\/(.+)\.html$/)?.[1],
+                          source:source,
+                          img:img
+                        })
+                  });
+                } 
+                reported=true
+              }
+            });
         }
+
 
 let fpInstance = null
 let currentVideoEl = null

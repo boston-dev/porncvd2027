@@ -9,7 +9,9 @@ dotenv.config({
 // 再加载通用
 dotenv.config()
 
-console.log(process.env.siteArr)
+const { startHotMemory } = require("./utils/hot-memory");
+startHotMemory();
+
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");

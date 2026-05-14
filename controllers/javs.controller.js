@@ -871,65 +871,34 @@ exports.home = asyncHandler(async (req, res) => {
   });
 });
 
-const ONLINE_EXPIRE = 30 * 60 * 1000;
-const MAX_ONLINE_PER_VIDEO = 20;
-
+const { addHotVideo ,getHotVideos} = require("../utils/hot-memory");
 exports.view = asyncHandler(async (req, res) => {
-  return res.status(400).json({ code: 1 });
-  const { id } = req.body;
+  const video = req.body;
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
+  if (!mongoose.Types.ObjectId.isValid(video.id)) {
     return res.status(400).json({ code: 1 });
   }
 
-  const ip =
-    req.headers["cf-connecting-ip"] ||
-    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-    req.socket?.remoteAddress ||
-    req.ip;
-
-  if (!ip) {
-    return res.status(400).json({ code: 1 });
-  }
-
-  const now = new Date();
-
-  const exists = await Online.exists({
-    vid: id,
-    ip,
-    expireAt: { $gt: now },
+  addHotVideo({
+    _id: video.id,
+    img: video?.img,
+    source: video?.source,
   });
 
-  if (exists) {
-    return res.json({ code: 0, cached: true });
-  }
-
-  await Online.updateOne(
-    { vid: id, ip },
-    {
-      $set: {
-        vid: id,
-        ip,
-        expireAt: new Date(Date.now() + ONLINE_EXPIRE),
-        updatedAt: now,
-      },
-    },
-    { upsert: true }
-  );
-
-  // 只查第21个以后的 _id，避免查太多字段
-  const oldList = await Online.find({ vid: id })
-    .sort({ updatedAt: -1 })
-    .skip(MAX_ONLINE_PER_VIDEO)
-    .limit(100)
-    .select("_id")
-    .lean();
-
-  if (oldList.length) {
-    await Online.deleteMany({
-      _id: { $in: oldList.map((item) => item._id) },
-    });
-  }
-
   return res.json({ code: 0 });
+});
+
+exports.hot = asyncHandler(async (req, res) => {
+  const list = getHotVideos(48);
+  const result={
+    docs: getHotVideos(48),
+    code: 0,
+  }
+  if (req.query.ajax) {
+    return res.send(result);
+  }
+  if (req.query.index) {
+    return res.render("include/boot-list.html", result);
+  }
+  return res.render("boot", result);
 });

@@ -62,7 +62,6 @@ router.get("/search/:search_query?/:p?", javs.search);
 router.get("/tag/:name/:p?", javs.tag);
 router.get("/cat/:name/:p?", javs.tag);
 router.get("/javs/:id.html", javs.detail);
-router.get("/hot.html", javs.detail);
 router.get("/genre/:p?", javs.genre);
 router.get("/hot/:p?", javs.hot);
 // ===== 简体入口（新增）=====
