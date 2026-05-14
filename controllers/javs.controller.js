@@ -883,6 +883,7 @@ exports.view = asyncHandler(async (req, res) => {
     _id: video.id,
     img: video?.img,
     source: video?.source,
+    title:video?.title
   });
 
   return res.json({ code: 0 });
