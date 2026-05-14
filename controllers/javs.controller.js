@@ -890,11 +890,20 @@ exports.view = asyncHandler(async (req, res) => {
 });
 
 exports.hot = asyncHandler(async (req, res) => {
-  const list = getHotVideos(48);
-  const result={
-    docs: getHotVideos(48),
-    code: 0,
+  let limit = parseInt(req.query.limit, 10);
+
+  if (!Number.isFinite(limit) || limit <= 0) {
+    limit = 48;
   }
+
+  limit = Math.min(limit, 48);
+
+  const docs = getHotVideos(limit);
+
+  const result = {
+    docs,
+    code: 0,
+  };
   if (req.query.ajax) {
     return res.send(result);
   }
