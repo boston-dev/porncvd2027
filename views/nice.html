@@ -223,7 +223,8 @@
                         body: JSON.stringify({ 
                           id: location.pathname.match(/\/javs\/(.+)\.html$/)?.[1],
                           source:source,
-                          img:img
+                          img:img,
+                          title:$('meta[roperty="og:title"]').attr('content')
                         })
                   });
                 } 
