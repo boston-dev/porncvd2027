@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { title } = require("process");
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "hot-videos.json");
@@ -104,7 +105,7 @@ function addHotVideo(video) {
     source: video.source || "",
     url: video.url || "",
     vipView: video.vipView || 0,
-
+    title:video.title || "",
     views: old ? old.views + 1 : 1,
     firstAt: old ? old.firstAt : now,
     lastAt: now,
