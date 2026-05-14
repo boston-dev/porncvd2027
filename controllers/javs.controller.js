@@ -897,9 +897,8 @@ exports.hot = asyncHandler(async (req, res) => {
   }
 
   limit = Math.min(limit, 48);
-
+  
   const docs = getHotVideos(limit);
-
   const result = {
     docs,
     code: 0,
