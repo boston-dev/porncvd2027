@@ -470,7 +470,7 @@ async function main() {
     serverSelectionTimeoutMS: 8000,
   });
 
-  //await buildHome();
+  await buildHome();
   await buildTag();
 
   await mongoose.disconnect();
