@@ -135,7 +135,12 @@ app.use(async (req, res, next) => {
     desc_en:
       "Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source",
   };
-
+   if(/^\/tag\/.*&/.test(req.path)){
+    return res.redirect(
+      301,
+      req.path.replace(/&.*$/, '')
+    )
+  }
   next();
 });
 /** Routes */
