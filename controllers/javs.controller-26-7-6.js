@@ -8,8 +8,13 @@ const {
   sanitizeUnicode,
   saveRankJson,
 } = require("../utils/buildMeta");
-const { detailLimiter, withPageRange } = require("../middleware/rateLimit");
+const {
+  detailLimiter,
+  withPageRange,
+  searchLimiter,
+} = require("../middleware/rateLimit");
 const renderFallback = require("../utils/renderFallback");
+const pageCache = require("../utils/pageCache");
 const OpenCC = require("opencc-js");
 const toTwp = OpenCC.Converter({ from: "cn", to: "twp" });
 const Jav = require("../models/Jav");
@@ -50,57 +55,119 @@ const slectConfig = {
   type: 1,
 };
 const queryFirt = { disable: { $ne: 1 } };
+const REALTIME_MAX_PAGE = 2;
+exports.search = [
+  searchLimiter,
+  asyncHandler(async (req, res) => {
+    let qRaw = String(req.query.search_query || "").trim();
 
-exports.search = asyncHandler(async (req, res) => {
-  let qRaw = (req.query.search_query || "").trim();
-  const page = Math.max(1, parseInt(req.query.page || "1", 10));
-  const limit = 40;
+    const MAX_SEARCH_PAGE = 2;
+    const limit = 40;
 
-  // 防刷：太长直接拒绝（避免 regex 被滥用）
-  if (qRaw.length > 60) return res.status(400).send("Bad Request");
-  if (res.locals.isCN) {
-    qRaw = toTwp(qRaw);
-  }
-  const query = { ...queryFirt };
-  if (qRaw) {
+    let page = Math.max(1, parseInt(req.query.page || "1", 10));
+
+    // 搜索页永远最多 2 页，防止 page=999 爆破
+    if (page > MAX_SEARCH_PAGE) {
+      return res.redirect(
+        301,
+        `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=${MAX_SEARCH_PAGE}`,
+      );
+    }
+
+    // 搜索词过长直接拒绝
+    if (qRaw.length > 40) {
+      return res.render("NotFound");
+    }
+
+    // 空搜索回首页
+    if (!qRaw || qRaw.length < 2) {
+      return res.render("NotFound");
+    }
+
+    const { t, isCN } = res.locals;
+
+    // 简体环境转繁体搜索
+    if (isCN) {
+      qRaw = toTwp(qRaw);
+    }
+
+    const query = { ...queryFirt };
+
     const reg = new RegExp(escReg(qRaw), "i");
+
     query.$or = [{ title: reg }, { desc: reg }];
-  }
-  const result = await Jav.paginate(query, {
-    page,
-    limit,
-    sort: { date: -1 },
-    select:
-      "title title_en img url site tag cat date id path vipView  source  site",
-    lean: true,
-    leanWithId: false,
-  });
 
-  result.search_query = qRaw;
-  Object.assign(result, {
-    ...withPageRange(result, {
-      prelink: `/search/javs?search_query=${qRaw}&page=pageTpl`,
-    }),
-  });
-  const { t, isCN } = res.locals;
-  if (isCN) {
-    result.docs = result.docs.map((video) => {
-      const isHanime = video.site == "hanime";
-      if (isHanime) return video;
-      return {
-        ...video,
-        title: t(video.title),
-        keywords: t(video.title),
-        desc: t(video.desc),
-      };
+    const skip = (page - 1) * limit;
+
+    // 不用 paginate，避免 countDocuments 压力
+    let docs = await Jav.find(query)
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(limit + 1)
+      .select(
+        "title title_en img url site tag cat date id path vipView source desc",
+      )
+      .lean();
+
+    // limit + 1 判断是否还有下一页
+    const realHasNextPage = docs.length > limit;
+
+    if (realHasNextPage) {
+      docs.pop();
+    }
+
+    // 简体环境翻译展示内容
+    if (isCN) {
+      docs = docs.map((video) => {
+        if (video.site === "hanime") return video;
+
+        return {
+          ...video,
+          title: t(video.title),
+          keywords: t(video.title),
+          desc: t(video.desc),
+        };
+      });
+    }
+
+    // 兼容 mongoose-paginate-v2 的视图字段
+    const result = {
+      docs,
+
+      // 基础分页字段
+      totalDocs: 0,
+      limit,
+      page,
+      totalPages: MAX_SEARCH_PAGE,
+      pagingCounter: skip + 1,
+
+      // 兼容模板常用字段
+      hasPrevPage: page > 1,
+      hasNextPage: page < MAX_SEARCH_PAGE && realHasNextPage,
+      prevPage: page > 1 ? page - 1 : null,
+      nextPage: page < MAX_SEARCH_PAGE && realHasNextPage ? page + 1 : null,
+
+      // 兼容旧模板
+      search_query: qRaw,
+    };
+
+    Object.assign(result, {
+      ...withPageRange(result, {
+        prelink: `/search/javs?search_query=${encodeURIComponent(
+          qRaw,
+        )}&page=pageTpl`,
+      }),
     });
-  }
-  if (req.query.ajax) {
-    return res.send(result);
-  }
-  return res.render("boot", result);
-});
 
+    res.setHeader("Cache-Control", "public, max-age=60");
+
+    if (req.query.ajax) {
+      return res.json(result);
+    }
+
+    return res.render("boot", result);
+  }),
+];
 function escapeRegExp(str = "") {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -113,83 +180,153 @@ function buildPrelinkByUrl(req, pageTpl = "pageTpl") {
     return base.replace(/\/\d+$/, `/${pageTpl}`);
   }
 
-  // 如果末尾不是数字 => 直接追加 /pageTpl
+  // 如果末尾不是数字 => 直接追加 /pageTplp
   return `${base}/${pageTpl}`;
 }
 exports.tag = asyncHandler(async (req, res) => {
   const site = decodeURIComponent((req.query.site || "").trim());
+
   const rawName = decodeURIComponent((req.params.name || "").trim());
-  let name = rawName.toLowerCase(); // ✅ 统一成小写
-  const findWord = tagNav.find((v) => v.p == name);
-  if (findWord) {
-    name = findWord.text;
+  if (!rawName || rawName.length < 2) {
+    return res.render("NotFound");
   }
-  const page = Math.max(1, parseInt(req.params.p || "1", 10));
+  let name = rawName.toLowerCase();
+
+  const findWord = tagNav.find((v) => v.p == name);
+
+  if (findWord) name = findWord.text;
+
+  const MAX_SAFE_PAGE = 1000;
+
+  let page = Math.max(1, parseInt(req.params.p || "1", 10));
+
+  page = Math.min(page, MAX_SAFE_PAGE);
+
   const limit = 40;
 
-  if (!name)
-    return renderFallback(req, res, { status: 404, view: "boot", limit: 16 });
+  if (!name) {
+    return renderFallback(req, res, {
+      status: 404,
+      view: "boot",
+      limit: 16,
+    });
+  }
+
+  const { t, isCN } = res.locals;
+
+  const isAjax = !!req.query.ajax;
+
+  const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
+
+  //const type = req.path.includes("/cat/") ? "cat" : "tag";
+  const type = "tag";
+  const shouldRealtime = page <= REALTIME_MAX_PAGE;
+
+  if (!isAjax && !shouldRealtime) {
+    const htmlPath = pageCache.makeTagHtmlPath({
+      lang,
+      type,
+      name,
+      page,
+      site,
+    });
+
+    let diskHtml = await pageCache.readHtml(htmlPath);
+
+    if (diskHtml) {
+      const siteFix = crypto.getSiteUrl(req);
+      diskHtml = diskHtml.replaceAll("https://porncvd.com", siteFix);
+      res.setHeader("X-Page-Cache", "DISK");
+      res.setHeader("Cache-Control", "public, max-age=180");
+
+      return res.send(diskHtml);
+    }
+  }
+
   let keywords = Array.isArray(name) ? name : [name];
+
   if (name.includes("台灣")) keywords.push("台灣");
+
   if (name.includes("twzp")) keywords.push("TWZP");
+
   if (name.includes("custom udon")) keywords.push("Custom Udon");
 
   keywords = [...new Set(keywords)];
+
   const optRegexp = keywords
     .filter(Boolean)
     .map((k) => new RegExp(escapeRegExp(k.trim()), "i"));
 
-  let query = optRegexp.length ? { tag: { $in: optRegexp } } : {}; // 没关键词就不加条件，避免 $in: []
+  let query = optRegexp.length ? { tag: { $in: optRegexp } } : {};
+
   let prelink = buildPrelinkByUrl(req);
+
   Object.assign(query, queryFirt);
+
   if (site) {
     res.locals.curSite = site;
-    Object.assign(query, {
-      site,
-    });
+
+    Object.assign(query, { site });
+
     prelink.includes("?")
       ? (prelink += `&site=${site}`)
       : (prelink += `?site=${site}`);
   }
+
   if (name == "porn5f") {
     query = {
       site: "5f",
+      ...queryFirt,
     };
   }
+
   const result = await Jav.paginate(query, {
     page,
     limit,
-    sort: { date: -1 },
+    sort: {
+      date: -1,
+    },
     select:
-      "title title_en img url site tag cat date id path vipView  source site",
+      "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
+
   result.name = name;
+
   res.locals.meta = buildListMeta({
     req,
-    type: req.path.startsWith("/tag") ? "tag" : "cat",
+    type,
     name,
     page,
-    totalPages: result.totalPages, // 你 paginate 的返回
+    totalPages: result.totalPages,
     siteName: process.env.SITE_NAME,
   });
+
   res.locals.meta = {
     ...res.locals.meta,
+
     titlePage: `${name}视频合集`,
+
     descPage: `
-      这里整理了与「${name} 相关的精选视频资源，内容更新及时，分类清晰，
+      这里整理了与「${name}」相关的精选视频资源，
+      内容更新及时，分类清晰，
       方便用户快速查找感兴趣的相关作品。
-      `,
+    `,
   };
+
   Object.assign(result, {
-    ...withPageRange(result, { prelink }),
+    ...withPageRange(result, {
+      prelink,
+    }),
   });
-  const { t, isCN } = res.locals;
+
   if (isCN) {
     result.docs = result.docs.map((video) => {
       const isHanime = video.site == "hanime";
+
       if (isHanime) return video;
+
       return {
         ...video,
         title: t(video.title),
@@ -197,6 +334,7 @@ exports.tag = asyncHandler(async (req, res) => {
         desc: t(video.desc),
       };
     });
+
     res.locals.meta = {
       ...res.locals.meta,
       title: t(res.locals.meta.title),
@@ -206,23 +344,78 @@ exports.tag = asyncHandler(async (req, res) => {
       descPage: t(res.locals.meta.descPage),
     };
   }
-  if (req.query.ajax) {
-    return res.send(result);
+
+  if (isAjax) {
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+
+    return res.json(result);
   }
-  return res.render("boot", result);
+
+  return res.render("boot", result, (err, html) => {
+    if (err) throw err;
+
+    if (!shouldRealtime) {
+      const htmlPath = pageCache.makeTagHtmlPath({
+        lang,
+        type,
+        name,
+        page,
+        site,
+      });
+
+      pageCache.writeHtmlLazy(htmlPath, html);
+    }
+
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+
+    res.setHeader("Cache-Control", "public, max-age=180");
+
+    return res.send(html);
+  });
 });
 exports.genre = asyncHandler(async (req, res) => {
-  const page = Math.max(1, parseInt(req.params.p || "1", 10));
+  const MAX_SAFE_PAGE = 2865;
+
+  let page = Math.max(1, parseInt(req.params.p || "1", 10));
+  page = Math.min(page, MAX_SAFE_PAGE);
+
   const limit = 40;
+  const isAjax = !!req.query.ajax;
+  const shouldRealtime = page <= REALTIME_MAX_PAGE;
+
   res.locals.curSite = "hanime";
-  const query = { site: { $eq: "hanime" }, ...queryFirt };
+  res.locals.meta.canonical = crypto.getSiteUrl(req);
+
+  // 非 ajax + 非实时页，优先读磁盘缓存
+  if (!isAjax && !shouldRealtime) {
+    const htmlPath = pageCache.makeGenreHtmlPath({ page });
+    let diskHtml = await pageCache.readHtml(htmlPath);
+
+    if (diskHtml) {
+      diskHtml = diskHtml.replaceAll(
+        "https://porncvd.com",
+        res.locals.meta.canonical,
+      );
+
+      res.setHeader("X-Page-Cache", "DISK");
+      res.setHeader("Cache-Control", "public, max-age=180");
+      return res.send(diskHtml);
+    }
+  }
+
+  const query = {
+    site: "hanime",
+    ...queryFirt,
+  };
+
   const prelink = `/genre/pageTpl`;
+
   const result = await Jav.paginate(query, {
     page,
     limit,
     sort: { date: -1 },
     select:
-      "title title_en img url site tag cat date id path vipView  source site",
+      "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
@@ -230,18 +423,33 @@ exports.genre = asyncHandler(async (req, res) => {
   Object.assign(result, {
     ...withPageRange(result, { prelink }),
   });
+
   res.locals.meta = buildListMeta({
     req,
     type: "cat",
     name: "動漫",
     page,
-    totalPages: result.totalPages, // 你 paginate 的返回
+    totalPages: result.totalPages,
     siteName: process.env.SITE_NAME,
   });
-  if (req.query.ajax) {
-    return res.send(result);
+
+  if (isAjax) {
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+    return res.json(result);
   }
-  return res.render("boot", result);
+
+  return res.render("boot", result, (err, html) => {
+    if (err) throw err;
+
+    if (!shouldRealtime) {
+      const htmlPath = pageCache.makeGenreHtmlPath({ page });
+      pageCache.writeHtmlLazy(htmlPath, html);
+    }
+
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+    res.setHeader("Cache-Control", "public, max-age=180");
+    return res.send(html);
+  });
 });
 // 随机取一个“可播放”的视频（你按自己字段改筛选条件）
 async function pickOnePlayableVideo(site) {
@@ -333,8 +541,7 @@ exports.detail = [
       })
       .lean();
 
-
-  const SITE = crypto.getSiteUrl(req)
+    const SITE = crypto.getSiteUrl(req);
 
     const url = `${SITE}${res.locals.basePath}/javs/${video._id}.html`;
     let title = sanitizeUnicode(video.title || "Video");
@@ -567,9 +774,35 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 
 exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
-  // 首页：最新
-  const page = Math.max(1, parseInt(req.query.page || "1", 10));
+  res.locals.meta.canonical = crypto.getSiteUrl(req);
+
+  const MAX_SAFE_PAGE = 2869;
+
+  let page = Math.max(1, parseInt(req.query.page || "1", 10));
+  page = Math.min(page, MAX_SAFE_PAGE);
+
   const limit = 40;
+  const { t, isCN } = res.locals;
+
+  const isAjax = !!req.query.ajax;
+  const lang = isCN ? "cn" : "tw";
+  const shouldRealtime = page <= REALTIME_MAX_PAGE;
+
+  if (!isAjax && !shouldRealtime) {
+    const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
+    let diskHtml = await pageCache.readHtml(htmlPath);
+
+    if (diskHtml) {
+      diskHtml = diskHtml.replaceAll(
+        "https://porncvd.com",
+        res.locals.meta.canonical,
+      );
+      res.setHeader("X-Page-Cache", "DISK");
+      res.setHeader("Cache-Control", "public, max-age=180");
+      return res.send(diskHtml);
+    }
+  }
+
   const query = { site: { $nin: siteArr }, ...queryFirt };
 
   const result = await Jav.paginate(query, {
@@ -577,29 +810,24 @@ exports.home = asyncHandler(async (req, res) => {
     limit,
     sort: { date: -1 },
     select:
-      "title title_en img url site tag cat date id path vipView  source site",
+      "title title_en img url site tag cat date id path vipView source site",
     lean: true,
     leanWithId: false,
   });
-  let userDoc = [];
-  // try {
-  //   userDoc = await getWatchingList({ siteArr, limit: 8 });
-  // } catch (e) {
-  //   console.error("getWatchingList error:", e.message);
-  //   userDoc = [];
-  // }
+
   Object.assign(result, {
     ...withPageRange(result, { prelink: "/?page=pageTpl" }),
     userVideo: {
-      docs: userDoc,
+      docs: [],
       title: "現正熱播中",
     },
   });
-  const { t, isCN } = res.locals;
+
   if (isCN) {
     result.docs = result.docs.map((video) => {
       const isHanime = video.site == "hanime";
       if (isHanime) return video;
+
       return {
         ...video,
         title: t(video.title),
@@ -608,73 +836,62 @@ exports.home = asyncHandler(async (req, res) => {
       };
     });
   }
-  res.locals.meta.canonical = crypto.getSiteUrl(req);
+  if (isAjax) {
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+    return res.json(result);
+  }
+
+  return res.render("index", result, (err, html) => {
+    if (err) throw err;
+
+    if (!shouldRealtime) {
+      const htmlPath = pageCache.makeHomeHtmlPath({ lang, page });
+      pageCache.writeHtmlLazy(htmlPath, html);
+    }
+
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
+    res.setHeader("Cache-Control", "public, max-age=180");
+    return res.send(html);
+  });
+});
+
+const { addHotVideo, getHotVideos } = require("../utils/hot-memory");
+exports.view = asyncHandler(async (req, res) => {
+  const video = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(video.id)) {
+    return res.status(400).json({ code: 1 });
+  }
+
+  addHotVideo({
+    _id: video.id,
+    img: video?.img,
+    source: video?.source,
+    title: video?.title,
+  });
+
+  return res.json({ code: 0 });
+});
+
+exports.hot = asyncHandler(async (req, res) => {
+  let limit = parseInt(req.query.limit, 10);
+
+  if (!Number.isFinite(limit) || limit <= 0) {
+    limit = 48;
+  }
+
+  limit = Math.min(limit, 48);
+
+  const docs = getHotVideos(limit);
+  const result = {
+    docs,
+    code: 0,
+  };
   if (req.query.ajax) {
     return res.send(result);
   }
-  return res.render("index", result);
-});
-
-
-const ONLINE_EXPIRE = 30 * 60 * 1000;
-const MAX_ONLINE_PER_VIDEO = 20;
-
-exports.view = asyncHandler(async (req, res) => {
-  return res.status(400).json({ code: 1 });
-  const { id } = req.body;
-
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ code: 1 });
+  if (req.query.index) {
+    return res.render("include/boot-list.html", result);
   }
-
-  const ip =
-    req.headers["cf-connecting-ip"] ||
-    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-    req.socket?.remoteAddress ||
-    req.ip;
-
-  if (!ip) {
-    return res.status(400).json({ code: 1 });
-  }
-
-  const now = new Date();
-
-  const exists = await Online.exists({
-    vid: id,
-    ip,
-    expireAt: { $gt: now },
-  });
-
-  if (exists) {
-    return res.json({ code: 0, cached: true });
-  }
-
-  await Online.updateOne(
-    { vid: id, ip },
-    {
-      $set: {
-        vid: id,
-        ip,
-        expireAt: new Date(Date.now() + ONLINE_EXPIRE),
-        updatedAt: now,
-      },
-    },
-    { upsert: true }
-  );
-
-  // 只查第21个以后的 _id，避免查太多字段
-  const oldList = await Online.find({ vid: id })
-    .sort({ updatedAt: -1 })
-    .skip(MAX_ONLINE_PER_VIDEO)
-    .limit(100)
-    .select("_id")
-    .lean();
-
-  if (oldList.length) {
-    await Online.deleteMany({
-      _id: { $in: oldList.map((item) => item._id) },
-    });
-  }
-
-  return res.json({ code: 0 });
+  return res.render("boot", result);
 });
