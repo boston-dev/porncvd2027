@@ -8,7 +8,11 @@ const {
   sanitizeUnicode,
   saveRankJson,
 } = require("../utils/buildMeta");
-const { detailLimiter, withPageRange,searchLimiter } = require("../middleware/rateLimit");
+const {
+  detailLimiter,
+  withPageRange,
+  searchLimiter,
+} = require("../middleware/rateLimit");
 const renderFallback = require("../utils/renderFallback");
 const pageCache = require("../utils/pageCache");
 const OpenCC = require("opencc-js");
@@ -51,7 +55,7 @@ const slectConfig = {
   type: 1,
 };
 const queryFirt = { disable: { $ne: 1 } };
-const REALTIME_MAX_PAGE =12;
+const REALTIME_MAX_PAGE = 2;
 exports.search = [
   searchLimiter,
   asyncHandler(async (req, res) => {
@@ -66,7 +70,7 @@ exports.search = [
     if (page > MAX_SEARCH_PAGE) {
       return res.redirect(
         301,
-        `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=${MAX_SEARCH_PAGE}`
+        `/search/javs?search_query=${encodeURIComponent(qRaw)}&page=${MAX_SEARCH_PAGE}`,
       );
     }
 
@@ -91,10 +95,7 @@ exports.search = [
 
     const reg = new RegExp(escReg(qRaw), "i");
 
-    query.$or = [
-      { title: reg },
-      { desc: reg },
-    ];
+    query.$or = [{ title: reg }, { desc: reg }];
 
     const skip = (page - 1) * limit;
 
@@ -104,7 +105,7 @@ exports.search = [
       .skip(skip)
       .limit(limit + 1)
       .select(
-        "title title_en img url site tag cat date id path vipView source desc"
+        "title title_en img url site tag cat date id path vipView source desc",
       )
       .lean();
 
@@ -153,7 +154,7 @@ exports.search = [
     Object.assign(result, {
       ...withPageRange(result, {
         prelink: `/search/javs?search_query=${encodeURIComponent(
-          qRaw
+          qRaw,
         )}&page=pageTpl`,
       }),
     });
@@ -195,7 +196,6 @@ exports.tag = asyncHandler(async (req, res) => {
 
   if (findWord) name = findWord.text;
 
-
   const MAX_SAFE_PAGE = 1000;
 
   let page = Math.max(1, parseInt(req.params.p || "1", 10));
@@ -216,7 +216,7 @@ exports.tag = asyncHandler(async (req, res) => {
 
   const isAjax = !!req.query.ajax;
 
-const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
+  const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
 
   //const type = req.path.includes("/cat/") ? "cat" : "tag";
   const type = "tag";
@@ -234,11 +234,8 @@ const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
     let diskHtml = await pageCache.readHtml(htmlPath);
 
     if (diskHtml) {
-      const siteFix=crypto.getSiteUrl(req);
-        diskHtml = diskHtml.replaceAll(
-        "https://porncvd.com",
-        siteFix
-      );
+      const siteFix = crypto.getSiteUrl(req);
+      diskHtml = diskHtml.replaceAll("https://porncvd.com", siteFix);
       res.setHeader("X-Page-Cache", "DISK");
       res.setHeader("Cache-Control", "public, max-age=180");
 
@@ -252,8 +249,7 @@ const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
 
   if (name.includes("twzp")) keywords.push("TWZP");
 
-  if (name.includes("custom udon"))
-    keywords.push("Custom Udon");
+  if (name.includes("custom udon")) keywords.push("Custom Udon");
 
   keywords = [...new Set(keywords)];
 
@@ -261,9 +257,7 @@ const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
     .filter(Boolean)
     .map((k) => new RegExp(escapeRegExp(k.trim()), "i"));
 
-  let query = optRegexp.length
-    ? { tag: { $in: optRegexp } }
-    : {};
+  let query = optRegexp.length ? { tag: { $in: optRegexp } } : {};
 
   let prelink = buildPrelinkByUrl(req);
 
@@ -352,10 +346,7 @@ const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
   }
 
   if (isAjax) {
-    res.setHeader(
-      "X-Page-Cache",
-      shouldRealtime ? "REALTIME" : "MISS"
-    );
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
 
     return res.json(result);
   }
@@ -375,15 +366,9 @@ const lang = site === "hanime" ? "tw" : isCN ? "cn" : "tw";
       pageCache.writeHtmlLazy(htmlPath, html);
     }
 
-    res.setHeader(
-      "X-Page-Cache",
-      shouldRealtime ? "REALTIME" : "MISS"
-    );
+    res.setHeader("X-Page-Cache", shouldRealtime ? "REALTIME" : "MISS");
 
-    res.setHeader(
-      "Cache-Control",
-      "public, max-age=180"
-    );
+    res.setHeader("Cache-Control", "public, max-age=180");
 
     return res.send(html);
   });
@@ -409,7 +394,7 @@ exports.genre = asyncHandler(async (req, res) => {
     if (diskHtml) {
       diskHtml = diskHtml.replaceAll(
         "https://porncvd.com",
-        res.locals.meta.canonical
+        res.locals.meta.canonical,
       );
 
       res.setHeader("X-Page-Cache", "DISK");
@@ -556,8 +541,7 @@ exports.detail = [
       })
       .lean();
 
-
-  const SITE = crypto.getSiteUrl(req)
+    const SITE = crypto.getSiteUrl(req);
 
     const url = `${SITE}${res.locals.basePath}/javs/${video._id}.html`;
     let title = sanitizeUnicode(video.title || "Video");
@@ -791,7 +775,7 @@ async function getWatchingList({ siteArr = [], limit = 10 }) {
 exports.home = asyncHandler(async (req, res) => {
   const { siteArr } = res.locals;
   res.locals.meta.canonical = crypto.getSiteUrl(req);
-  
+
   const MAX_SAFE_PAGE = 2869;
 
   let page = Math.max(1, parseInt(req.query.page || "1", 10));
@@ -809,9 +793,9 @@ exports.home = asyncHandler(async (req, res) => {
     let diskHtml = await pageCache.readHtml(htmlPath);
 
     if (diskHtml) {
-        diskHtml = diskHtml.replaceAll(
+      diskHtml = diskHtml.replaceAll(
         "https://porncvd.com",
-        res.locals.meta.canonical
+        res.locals.meta.canonical,
       );
       res.setHeader("X-Page-Cache", "DISK");
       res.setHeader("Cache-Control", "public, max-age=180");
@@ -871,7 +855,7 @@ exports.home = asyncHandler(async (req, res) => {
   });
 });
 
-const { addHotVideo ,getHotVideos} = require("../utils/hot-memory");
+const { addHotVideo, getHotVideos } = require("../utils/hot-memory");
 exports.view = asyncHandler(async (req, res) => {
   const video = req.body;
 
@@ -883,7 +867,7 @@ exports.view = asyncHandler(async (req, res) => {
     _id: video.id,
     img: video?.img,
     source: video?.source,
-    title:video?.title
+    title: video?.title,
   });
 
   return res.json({ code: 0 });
@@ -897,7 +881,7 @@ exports.hot = asyncHandler(async (req, res) => {
   }
 
   limit = Math.min(limit, 48);
-  
+
   const docs = getHotVideos(limit);
   const result = {
     docs,
