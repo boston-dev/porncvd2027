@@ -468,6 +468,8 @@ async function pickOnePlayableVideo(site) {
  * - ObjectId regex validation BEFORE hitting Mongo
  * - unified fallback page on invalid/404
  */
+const javCache = require("../utils/javCache");
+
 exports.detail = [
   detailLimiter,
   asyncHandler(async (req, res) => {
@@ -476,79 +478,124 @@ exports.detail = [
     const raw = req.params.id || "";
     let id = raw.replace(/\.html$/i, "");
     const { t, isCN } = res.locals;
-    // ✅ fast ObjectId regex validation
+
+    // ======================
+    // 1. ID 校验（防垃圾请求）
+    // ======================
     if (id.length !== 24 || !/^[a-f\d]{24}$/i.test(id)) {
       return res.redirect("/");
-      // return renderFallback(req, res, { status: 404, view: 'boot', limit: 16 });
     }
 
-    let video = await Jav.findById(id).select(slectConfig).lean();
+    // ======================
+    // 2. DETAIL 缓存（核心）
+    // ======================
+    const cacheKey = `javs:detail:${id}`;
+
+    let video = javCache.get(cacheKey);
 
     if (!video) {
-      const oldId = id;
-      const findQuery = { oldId };
-      let map = await OldUrlMap.findOne(findQuery).lean();
-      if (!map) {
-        const picked = await pickOnePlayableVideo();
-        // 用 upsert 防并发：同一个 oldId 只会插入一次
-        await OldUrlMap.findOneAndUpdate(
-          { oldId },
-          {
-            $setOnInsert: {
-              oldId,
-              newId: picked._id,
+      video = await Jav.findById(id).select(slectConfig).lean();
+
+      // oldId fallback
+      if (!video) {
+        const oldId = id;
+        const map = await OldUrlMap.findOne({ oldId }).lean();
+
+        if (!map) {
+          const picked = await pickOnePlayableVideo();
+
+          await OldUrlMap.findOneAndUpdate(
+            { oldId },
+            {
+              $setOnInsert: {
+                oldId,
+                newId: picked._id,
+              },
             },
-          },
-          { upsert: true, new: true },
-        );
-        video = picked;
-      } else {
-        video = await Jav.findById(map.newId).lean();
-        if (!video) return res.redirect("/");
+            { upsert: true, new: true },
+          );
+
+          video = picked;
+        } else {
+          video = await Jav.findById(map.newId).lean();
+          if (!video) return res.redirect("/");
+        }
       }
-      //return renderFallback(req, res, { status: 200, view: '404', limit: 16 });
-      //随机取出16个数据，第一个当做 播放视频详情，其他当做推荐
+
+      if (video) {
+        javCache.set(cacheKey, video, 10 * 60 * 1000); // 10分钟
+      }
     }
+
+    // ======================
+    // 3. 禁用判断
+    // ======================
     if (video.disable) {
-      return renderFallback(req, res, { status: 410, view: "404", limit: 16 });
+      return renderFallback(req, res, {
+        status: 410,
+        view: "404",
+        limit: 16,
+      });
     }
+
     const isHanime = video.site == "hanime";
     if (isHanime) {
       res.locals.curSite = "hanime";
     }
 
     const tags = Array.isArray(video.tag) ? video.tag.filter(Boolean) : [];
+
+    // ======================
+    // 4. relate 缓存（第二核心）
+    // ======================
+    const relateKey = `javs:relate:${id}`;
+
+    let docs = javCache.get(relateKey);
+
     const relateDoc = {
       _id: { $ne: video._id },
       ...(tags.length ? { tag: { $in: tags } } : {}),
     };
-    if (video.site === "hanime") relateDoc.site = { $eq: "hanime" };
-    else relateDoc.site = { $ne: "hanime" };
 
-    const docs = await Jav.find(relateDoc)
-      .sort({ date: -1 })
-      .limit(22)
-      .select({
-        title: 1,
-        img: 1,
-        site: 1,
-        tag: 1,
-        cat: 1,
-        date: 1,
-        id: 1,
-        path: 1,
-        source: 1,
-      })
-      .lean();
+    if (video.site === "hanime") {
+      relateDoc.site = { $eq: "hanime" };
+    } else {
+      relateDoc.site = { $ne: "hanime" };
+    }
 
+    if (!docs) {
+      docs = await Jav.find(relateDoc)
+        .sort({ date: -1 })
+        .limit(22)
+        .select({
+          title: 1,
+          img: 1,
+          site: 1,
+          tag: 1,
+          cat: 1,
+          date: 1,
+          id: 1,
+          path: 1,
+          source: 1,
+        })
+        .lean();
+
+      javCache.set(relateKey, docs, 5 * 60 * 1000); // 5分钟
+    }
+
+    // ======================
+    // 5. SEO / 数据处理（保持你原逻辑）
+    // ======================
     const SITE = crypto.getSiteUrl(req);
-
     const url = `${SITE}${res.locals.basePath}/javs/${video._id}.html`;
+
     let title = sanitizeUnicode(video.title || "Video");
     let desc = sanitizeUnicode((video.desc || title).slice(0, 160));
+
     if (isCN && !isHanime) {
       title = t(title);
       desc = t(desc);
+
       docs.forEach((v) => {
         if (v.site !== "hanime") {
           v.title = t(v.title);
@@ -556,14 +603,19 @@ exports.detail = [
         }
       });
     }
+
     video.title = title;
     video.desc = desc;
     video.url = encUrl(video.url);
+
     const img = `${video.source}${video.img}`;
+
     const uploadDate = new Date(Number(video.date || Date.now()))
       .toISOString()
       .replace(/\.\d{3}Z$/, "Z");
+
     const contentUrl = `${SITE}/placeholder/${video._id}.mp4`;
+
     res.locals.meta = {
       title: `${title} - ${process.env.SITE_NAME}`,
       keywords: Array.isArray(video.tag) ? video.tag.join(",") : "",
@@ -575,20 +627,20 @@ exports.detail = [
         desc,
         image: img,
       },
-
-      // ✅ VideoObject（SEO 核心）
       jsonLd: {
         "@context": "https://schema.org",
         "@type": "VideoObject",
         name: title,
         description: desc,
         thumbnailUrl: [img],
-        uploadDate: uploadDate,
+        uploadDate,
         embedUrl: url,
-        contentUrl: contentUrl,
+        contentUrl,
       },
     };
+
     const fentData = { video, docs };
+
     if (req.query.ajax) return res.send(fentData);
 
     return res.render("nice", fentData);
