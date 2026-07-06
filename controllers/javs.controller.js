@@ -55,7 +55,7 @@ const slectConfig = {
   type: 1,
 };
 const queryFirt = { disable: { $ne: 1 } };
-const REALTIME_MAX_PAGE = 2;
+const REALTIME_MAX_PAGE = 12;
 exports.search = [
   searchLimiter,
   asyncHandler(async (req, res) => {
