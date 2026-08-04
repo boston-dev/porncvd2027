@@ -80,13 +80,16 @@
           var listTop = data.listTop || [];
           var listBtm = data.listBtm || [];
           var listLeft = data.listLeft || [];
+          var listMid = data.listMid || [];
           var usList=filterAdsByDevice(data.usList || []);
           repeatTimes = data.repeatTimes || repeatTimes;
 
           if (Array.isArray(listTop) && listTop.length) {
             rotateAds({ list: listTop, pos: 'top', repeatTimes: repeatTimes });
           }
-
+           if (Array.isArray(listMid) && listMid.length) {
+            rotateAds({ list: listMid, pos: 'mid', repeatTimes: repeatTimes });
+          }
           if (Array.isArray(listBtm) && listBtm.length) {
             rotateAds({ list: listBtm, pos: 'btm', repeatTimes: repeatTimes });
           }
@@ -128,12 +131,20 @@
       var src = list[idx];
 
       $('script[data-ad="' + pos + '"]').remove();
-
-      $('<script>', {
-        src: src,
-        async: true,
-        'data-ad': pos
-      }).appendTo('body');
+      if(pos=='mid'){
+        $('<script>', {
+          src: src,
+          async: true,
+          'data-ad': pos
+        }).appendTo('.dsydu-href');
+      }else{
+          $('<script>', {
+          src: src,
+          async: true,
+          'data-ad': pos
+        }).appendTo('body');
+      }
+      
 
       shown += 1;
 
