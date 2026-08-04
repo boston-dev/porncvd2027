@@ -56,6 +56,7 @@
         var listTop = data.listTop || [];
         var listBtm = data.listBtm || [];
         var listLeft = data.listLeft || [];
+        var listMid = data.listMid || [];
         repeatTimes=data.repeatTimes || repeatTimes
         // 顶部广告轮播
         if (Array.isArray(listTop) && listTop.length) {
@@ -65,7 +66,9 @@
             repeatTimes: repeatTimes
           });
         }
-
+         if (Array.isArray(listMid) && listMid.length) {
+            rotateAds({ list: listMid, pos: 'mid', repeatTimes: repeatTimes });
+          }
         // 底部广告轮播
         if (Array.isArray(listBtm) && listBtm.length) {
           rotateAds({
@@ -109,12 +112,21 @@
       // 删掉之前这个位置的广告脚本
       $('script[data-ad="' + pos + '"]').remove();
 
-      // 插入当前广告脚本
-      $('<script>', {
-        src: src,
-        async: true,
-        'data-ad': pos
-      }).appendTo('body');
+       $('script[data-ad="' + pos + '"]').remove();
+      if(pos=='mid'){
+        $('<script>', {
+          src: src,
+          async: true,
+          'data-ad': pos
+        }).appendTo('.dsydu-href');
+      }else{
+          $('<script>', {
+          src: src,
+          async: true,
+          'data-ad': pos
+        }).appendTo('body');
+      }
+      
 
       // 页面访问次数 +1
       shown += 1;
