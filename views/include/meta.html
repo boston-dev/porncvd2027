@@ -56,10 +56,12 @@
     var d1Parts = ["hrt", "21", ".", "c", "o", "m"];
     var d2Parts = ["porn", "cvd", ".", "c", "o", "m"];
     var d3Parts = ["pic", "gaze", ".", "c", "o", "m"];
+    var d4Parts = ["91", "cgc", ".", "c", "o", "m"];
     var allow = [
       buildDomain(d1Parts),
       buildDomain(d2Parts),
       buildDomain(d3Parts),
+      buildDomain(d4Parts),
     ];
     var host = (location.hostname || "").toLowerCase();
     var ok = allow.some((d) => host === d || host.endsWith("." + d));
