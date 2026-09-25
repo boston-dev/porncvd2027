@@ -99,8 +99,14 @@
             <%
             for(let k=0;k<video.tag.length;k++){
             %>
-            <a href="https://www.profitableratecpmnetwork.com/x9trcfqjs?key=bb5ff3841fce8fb29841637b0b02de9d
-" class="btn my-1 btn-secondary btn-sm"><%=video.tag[k]%></a>
+             <%
+            for(let k=0;k<video.tag.length;k++){
+            %>
+            <a href="/tag/<%=video.tag[k]%>/<% if(curSite){%>?site=<%=curSite%><%}%>" class="btn my-1 btn-secondary btn-sm"><%=video.tag[k]%></a>
+
+            <%
+            }
+            %>
 
             <%
             }
