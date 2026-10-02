@@ -97,7 +97,7 @@
         %>
         <div class="min-mx--30 px-1 my-1">
             <%
-            for(let k=0;k<Math.min(video.tag.length, 16);k++){
+            for(let k=0;k<video.tag.length;k++){
             %>
             <a href="/tag/<%=video.tag[k]%>/<% if(curSite){%>?site=<%=curSite%><%}%>" class="btn my-1 btn-secondary btn-sm"><%=video.tag[k]%></a>
             <%
