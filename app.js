@@ -1,13 +1,13 @@
 "use strict";
-const dotenv= require("dotenv"); 
+const dotenv = require("dotenv");
 
 // 根据环境自动加载
 dotenv.config({
-  path: `.env.${process.env.NODE_ENV || 'development'}`
-})
+  path: `.env.${process.env.NODE_ENV || "development"}`,
+});
 
 // 再加载通用
-dotenv.config()
+dotenv.config();
 
 const { startHotMemory } = require("./utils/hot-memory");
 startHotMemory();
@@ -39,7 +39,6 @@ app.set("view engine", "html");
 //设置一下对于html格式的文件，渲染的时候委托ejs的渲染方面来进行渲染
 app.engine("html", require("ejs").renderFile);
 app.set("views", path.join(__dirname, "views"));
-
 /** Security & performance */
 app.disable("x-powered-by");
 app.use(
@@ -77,7 +76,7 @@ function isMobile(req) {
 
 app.use(async (req, res, next) => {
   // 是否简体页面（只判断路由前缀）
-  res.locals.IndexSite =crypto.getSiteUrl(req);
+  res.locals.IndexSite = crypto.getSiteUrl(req);
   res.locals.isCN = req.path.startsWith("/zh-CN");
   res.locals.basePath = res.locals.isCN ? "/zh-CN" : "";
   res.locals.isMobile = isMobile(req);
@@ -135,21 +134,16 @@ app.use(async (req, res, next) => {
     desc_en:
       "Tens of thousands of free online porn videos, the latest Chinese subtitles, uncensored streaming, Hentai, porn anime, JAV, domestic selfies, sex av, amateur av, free porn, streaming, sex selfies, amateur, adult uncensored, free adult, Taiwan Selfie, you know the source",
   };
-   if(/^\/tag\/.*&/.test(req.path)){
-    return res.redirect(
-      301,
-      req.path.replace(/&.*$/, '')
-    )
+  if (/^\/tag\/.*&/.test(req.path)) {
+    return res.redirect(301, req.path.replace(/&.*$/, ""));
   }
   next();
 });
 /** Routes */
 app.use("/", routes);
-
 /** 404 + error */
 app.use(notFound);
 app.use(errorHandler);
-
 /** --- Mongo connect with backoff (avoid infinite crash-loop) --- */
 async function connectMongoWithRetry() {
   const uri = process.env.MONGO_URI;
